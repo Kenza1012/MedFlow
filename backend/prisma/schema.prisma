@@ -1,0 +1,105 @@
+// =========================
+//  DATASOURCE & GENERATOR
+// =========================
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// =========================
+//  MODELS
+// =========================
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(PATIENT)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  patient        Patient?
+  medecin        Medecin?
+  receptionniste Receptionniste?
+}
+
+model Patient {
+  id            Int      @id @default(autoincrement())
+  userId        Int      @unique
+  dateNaissance DateTime
+  antecedents   String?
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rendezVous    RendezVous[]
+  consultations Consultation[]
+  factures      Facture[]
+}
+
+model Medecin {
+  id         Int    @id @default(autoincrement())
+  userId     Int    @unique
+  specialite String
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  rendezVous    RendezVous[]
+  consultations Consultation[]
+}
+
+model Receptionniste {
+  id     Int  @id @default(autoincrement())
+  userId Int  @unique
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RendezVous {
+  id        Int      @id @default(autoincrement())
+  date      DateTime
+  motif     String
+  status    String   @default("En attente")
+  patientId Int
+  medecinId Int
+
+  patient Patient @relation(fields: [patientId], references: [id])
+  medecin Medecin @relation(fields: [medecinId], references: [id])
+}
+
+model Consultation {
+  id           Int      @id @default(autoincrement())
+  date         DateTime @default(now())
+  diagnostic   String
+  prescription String?
+  medecinId    Int
+  patientId    Int
+
+  medecin Medecin  @relation(fields: [medecinId], references: [id])
+  patient Patient  @relation(fields: [patientId], references: [id])
+  facture Facture?
+}
+
+model Facture {
+  id             Int      @id @default(autoincrement())
+  montant        Float
+  date           DateTime @default(now())
+  statut         String   @default("Non payé")
+  patientId      Int
+  consultationId Int?     @unique // ✅ Correction : relation 1–1
+
+  patient      Patient       @relation(fields: [patientId], references: [id])
+  consultation Consultation? @relation(fields: [consultationId], references: [id])
+}
+
+// =========================
+//  ENUMS
+// =========================
+
+enum Role {
+  ADMIN
+  MEDECIN
+  RECEPTIONNISTE
+  PATIENT
+}
