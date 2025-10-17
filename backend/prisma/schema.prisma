@@ -44,7 +44,8 @@ model Medecin {
   id         Int    @id @default(autoincrement())
   userId     Int    @unique
   specialite String
-  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User    @relation(fields: [userId], references: [id])
+  
 
   rendezVous    RendezVous[]
   consultations Consultation[]

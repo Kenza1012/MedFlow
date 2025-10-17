@@ -6,8 +6,15 @@ import * as bcrypt from 'bcrypt';
 export class UserService {
   constructor(private prisma: PrismaService) {}
 
-  // 🔹 Créer un nouvel utilisateur (inscription)
-  async register(data: { name: string; email: string; password: string; role: string }) {
+  async register(data: {
+    name: string;
+    email: string;
+    password: string;
+    role: string;
+    specialite?: string; // pour le médecin
+    dateNaissance?: string; // pour le patient
+    antecedents?: string; // pour le patient
+  }) {
     // Vérifie si l'utilisateur existe déjà
     const existingUser = await this.prisma.user.findUnique({
       where: { email: data.email },
@@ -25,23 +32,44 @@ export class UserService {
         name: data.name,
         email: data.email,
         password: hashedPassword,
-        role: data.role as 'PATIENT' | 'MEDECIN' | 'ADMIN',
+        role: data.role as 'PATIENT' | 'MEDECIN' | 'ADMIN' | 'RECEPTIONNISTE',
       },
     });
 
-    // On ne retourne pas le mot de passe
+    // 🔹 Création spécifique selon rôle
+    if (user.role === 'MEDECIN') {
+      if (!data.specialite) {
+        throw new Error('La spécialité du médecin est requise.');
+      }
+      await this.prisma.medecin.create({
+        data: {
+          userId: user.id,
+          specialite: data.specialite,
+        },
+      });
+    }
+
+    if (user.role === 'PATIENT') {
+      await this.prisma.patient.create({
+        data: {
+          userId: user.id,
+          dateNaissance: data.dateNaissance
+            ? new Date(data.dateNaissance)
+            : new Date('2000-01-01'),
+          antecedents: data.antecedents || '',
+        },
+      });
+    }
+
+    // Ne retourne pas le mot de passe
     const { password, ...result } = user;
     return result;
   }
 
-  // 🔹 Trouver un utilisateur par email (utile pour le login)
   async findByEmail(email: string) {
-    return this.prisma.user.findUnique({
-      where: { email },
-    });
+    return this.prisma.user.findUnique({ where: { email } });
   }
 
-  // 🔹 Obtenir la liste de tous les utilisateurs (optionnel)
   async getAll() {
     return this.prisma.user.findMany({
       select: {
@@ -53,10 +81,7 @@ export class UserService {
     });
   }
 
-  // 🔹 Supprimer un utilisateur (optionnel)
   async deleteUser(id: number) {
-    return this.prisma.user.delete({
-      where: { id },
-    });
+    return this.prisma.user.delete({ where: { id } });
   }
 }

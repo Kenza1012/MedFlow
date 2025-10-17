@@ -19,6 +19,7 @@ export class AuthService {
 
     return user;
   }
+  
 
   async login(email: string, password: string) {
     const user = await this.validateUser(email, password);
@@ -26,4 +27,6 @@ export class AuthService {
     const token = this.jwtService.sign(payload);
     return { access_token: token, user };
   }
+
+  
 }
