@@ -10,12 +10,12 @@ export class UserService {
     name: string;
     email: string;
     password: string;
-    role: string;
-    specialite?: string; // pour le médecin
-    dateNaissance?: string; // pour le patient
-    antecedents?: string; // pour le patient
+    role: 'PATIENT' | 'MEDECIN' | 'ADMIN' | 'RECEPTIONNISTE';
+    specialite?: string;
+    dateNaissance?: string;
+    antecedents?: string;
   }) {
-    // Vérifie si l'utilisateur existe déjà
+    // Vérifie si un utilisateur avec cet email existe déjà
     const existingUser = await this.prisma.user.findUnique({
       where: { email: data.email },
     });
@@ -26,50 +26,65 @@ export class UserService {
     // Hachage du mot de passe
     const hashedPassword = await bcrypt.hash(data.password, 10);
 
-    // Création de l'utilisateur
-    const user = await this.prisma.user.create({
-      data: {
-        name: data.name,
-        email: data.email,
-        password: hashedPassword,
-        role: data.role as 'PATIENT' | 'MEDECIN' | 'ADMIN' | 'RECEPTIONNISTE',
-      },
+    // Transaction pour garantir la cohérence
+    const result = await this.prisma.$transaction(async (tx) => {
+      // Création du user
+      const user = await tx.user.create({
+        data: {
+          name: data.name,
+          email: data.email,
+          password: hashedPassword,
+          role: data.role,
+        },
+      });
+
+      // Création selon le rôle
+      switch (data.role) {
+        case 'MEDECIN':
+          if (!data.specialite) {
+            throw new Error('La spécialité du médecin est requise.');
+          }
+          await tx.medecin.create({
+            data: {
+              userId: user.id,
+              specialite: data.specialite,
+            },
+          });
+          break;
+
+        case 'PATIENT':
+          await tx.patient.create({
+            data: {
+              userId: user.id,
+              dateNaissance: data.dateNaissance
+                ? new Date(data.dateNaissance)
+                : new Date('2000-01-01'),
+              antecedents: data.antecedents || '',
+            },
+          });
+          break;
+
+        case 'RECEPTIONNISTE':
+          await tx.receptionniste.create({
+            data: { userId: user.id },
+          });
+          break;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { password, ...userWithoutPassword } = user;
+      return userWithoutPassword;
     });
 
-    // 🔹 Création spécifique selon rôle
-    if (user.role === 'MEDECIN') {
-      if (!data.specialite) {
-        throw new Error('La spécialité du médecin est requise.');
-      }
-      await this.prisma.medecin.create({
-        data: {
-          userId: user.id,
-          specialite: data.specialite,
-        },
-      });
-    }
-
-    if (user.role === 'PATIENT') {
-      await this.prisma.patient.create({
-        data: {
-          userId: user.id,
-          dateNaissance: data.dateNaissance
-            ? new Date(data.dateNaissance)
-            : new Date('2000-01-01'),
-          antecedents: data.antecedents || '',
-        },
-      });
-    }
-
-    // Ne retourne pas le mot de passe
-    const { password, ...result } = user;
     return result;
   }
 
+  // 🔹 Trouver un utilisateur par email
   async findByEmail(email: string) {
     return this.prisma.user.findUnique({ where: { email } });
   }
 
+  // 🔹 Liste de tous les utilisateurs
   async getAll() {
     return this.prisma.user.findMany({
       select: {
@@ -81,6 +96,7 @@ export class UserService {
     });
   }
 
+  // 🔹 Supprimer un utilisateur
   async deleteUser(id: number) {
     return this.prisma.user.delete({ where: { id } });
   }
