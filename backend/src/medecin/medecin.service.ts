@@ -1,59 +1,26 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import * as PDFDocument from 'pdfkit';
+
 import * as fs from 'fs';
+import * as PDFDocument from 'pdfkit';
+
+
+
 
 @Injectable()
 export class MedecinService {
   constructor(private prisma: PrismaService) {}
 
+  // 🔹 Trouver un médecin via le userId
+  async findByUserId(userId: number) {
+    return this.prisma.medecin.findUnique({
+      where: { userId },
+    });
+  }
+
   // 🔹 Obtenir tous les rendez-vous d'un médecin
   async getRendezVous(medecinId: number) {
     return this.prisma.rendezVous.findMany({
-      where: { medecinId },
-      include: {
-        patient: {
-          include: { user: true }, // Pour afficher le nom/email du patient
-        },
-      },
-    });
-  }
-
-  // 🔹 Ajouter une consultation
-  async addConsultation(data: {
-    medecinId: number;
-    patientId: number;
-    diagnostic: string;
-    prescription?: string; // ✅ correspond à ton schéma Prisma
-  }) {
-    const { medecinId, patientId, diagnostic, prescription } = data;
-
-    // Vérifier si le médecin existe
-    const medecin = await this.prisma.medecin.findUnique({
-      where: { id: medecinId },
-    });
-    if (!medecin) throw new NotFoundException("Médecin non trouvé");
-
-    // Vérifier si le patient existe
-    const patient = await this.prisma.patient.findUnique({
-      where: { id: patientId },
-    });
-    if (!patient) throw new NotFoundException("Patient non trouvé");
-
-    // Créer la consultation
-    return this.prisma.consultation.create({
-      data: {
-        medecinId,
-        patientId,
-        diagnostic,
-        prescription, // ✅ correspond à ton modèle Prisma
-      },
-    });
-  }
-
-  // 🔹 Lister toutes les consultations d'un médecin
-  async getConsultations(medecinId: number) {
-    return this.prisma.consultation.findMany({
       where: { medecinId },
       include: {
         patient: { include: { user: true } },
@@ -61,8 +28,38 @@ export class MedecinService {
     });
   }
 
+  // 🔹 Ajouter une consultation
+  async addConsultation(
+    medecinId: number,
+    data: { patientId: number; diagnostic: string; prescription?: string }
+  ) {
+    const { patientId, diagnostic, prescription } = data;
+
+    // Vérifier si le médecin existe
+    const medecin = await this.prisma.medecin.findUnique({ where: { id: medecinId } });
+    if (!medecin) throw new NotFoundException('Médecin non trouvé');
+
+    // Vérifier si le patient existe
+    const patient = await this.prisma.patient.findUnique({ where: { id: patientId } });
+    if (!patient) throw new NotFoundException('Patient non trouvé');
+
+    // Créer la consultation
+    return this.prisma.consultation.create({
+      data: { medecinId, patientId, diagnostic, prescription },
+    });
+  }
+
+  // 🔹 Obtenir toutes les consultations d'un médecin
+  async getConsultations(medecinId: number) {
+    return this.prisma.consultation.findMany({
+      where: { medecinId },
+      include: { patient: { include: { user: true } } },
+    });
+  }
+
   // 🔹 Générer une ordonnance PDF
-  async generateOrdonnancePDF(consultationId: number) {
+  // src/medecin/medecin.service.ts
+ async generateOrdonnancePDF(consultationId: number) {
     const consultation = await this.prisma.consultation.findUnique({
       where: { id: consultationId },
       include: {
@@ -71,30 +68,33 @@ export class MedecinService {
       },
     });
 
-    if (!consultation)
-      throw new NotFoundException('Consultation non trouvée');
+    if (!consultation) throw new NotFoundException('Consultation non trouvée');
 
-    // Dossier de sortie
-    const dir = 'ordonnances';
-    if (!fs.existsSync(dir)) fs.mkdirSync(dir);
-
-    const filePath = `${dir}/ordonnance_${consultationId}.pdf`;
     const doc = new PDFDocument();
-    doc.pipe(fs.createWriteStream(filePath));
+    const buffers: Buffer[] = [];
 
-    doc.fontSize(20).text('🩺 Ordonnance Médicale', { align: 'center' });
+    doc.on('data', (chunk) => buffers.push(chunk));
+    doc.on('end', () => {});
+
+    const patientName = consultation.patient?.user?.name ?? 'Inconnu';
+    const medecinName = consultation.medecin?.user?.name ?? 'N/A';
+    const date = consultation.date ? consultation.date.toDateString() : 'Date inconnue';
+
+    doc.fontSize(20).text(' Ordonnance Médicale', { align: 'center' });
     doc.moveDown();
-
-    doc.fontSize(14).text(`👤 Patient : ${consultation.patient.user.name}`);
-    doc.text(`👨‍⚕️ Médecin : ${consultation.medecin.user.name}`);
-    doc.text(`📅 Date : ${consultation.date.toDateString()}`);
+    doc.fontSize(14).text(` Patient : ${patientName}`);
+    doc.text(` Médecin : ${medecinName}`);
+    doc.text(` Date : ${date}`);
     doc.moveDown();
-
-    doc.text(`Diagnostic : ${consultation.diagnostic}`);
-    doc.text(`Prescription : ${consultation.prescription ?? 'Aucune'}`);
+    doc.text(` Diagnostic : ${consultation.diagnostic ?? 'Non renseigné'}`);
+    doc.text(` Prescription : ${consultation.prescription ?? 'Aucune'}`);
 
     doc.end();
 
-    return { message: 'Ordonnance générée', filePath };
+    return new Promise<Buffer>((resolve) => {
+      const result: Buffer[] = [];
+      doc.on('data', (chunk) => result.push(Buffer.from(chunk)));
+      doc.on('end', () => resolve(Buffer.concat(result)));
+    });
   }
 }
