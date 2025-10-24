@@ -1,28 +1,19 @@
-/* === Reset & Base === */
-* {
-  margin: 0;
-  padding: 0;
+/* === Auth Specific Reset & Base === */
+.auth-container * {
   box-sizing: border-box;
   font-family: "Poppins", sans-serif;
 }
 
-body {
-  height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background: linear-gradient(135deg, #007bff, #00c6ff);
-}
-
 /* === Container === */
 .auth-container {
-  background: #fff;
+  margin: 0 auto; /* centrer horizontalement */
   padding: 40px 50px;
   border-radius: 16px;
   box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
   width: 400px;
   text-align: center;
   animation: fadeIn 0.7s ease-in-out;
+  background: #fff;
 }
 
 /* === Header === */
@@ -97,4 +88,13 @@ body {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* === Body wrapper spécifique à auth === */
+.auth-page {
+  height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #007bff, #00c6ff);
 }
