@@ -18,15 +18,27 @@ export default function MedecinDashboard() {
   const [posting, setPosting] = useState(false);
   const [activeTab, setActiveTab] = useState("rendezvous");
 
+  // ✅ Avatar sauvegardé dans le localStorage
+  const [avatar, setAvatar] = useState(
+    localStorage.getItem("medecinAvatar") ||
+      "https://png.pngtree.com/png-clipart/20230918/ourmid/pngtree-photo-men-doctor-physician-chest-smiling-png-image_10132895.png"
+  );
+
   const navigate = useNavigate();
 
-  // 🔹 Déconnexion
+  // ✅ Sauvegarde de l’image dans localStorage
+  useEffect(() => {
+    localStorage.setItem("medecinAvatar", avatar);
+  }, [avatar]);
+
+  // ✅ Déconnexion
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     navigate("/");
   };
 
+  // ✅ Charger les données
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -43,6 +55,7 @@ export default function MedecinDashboard() {
     fetchData();
   }, []);
 
+  // ✅ Télécharger une ordonnance
   const handleDownload = async (consultationId) => {
     try {
       await downloadOrdonnance(consultationId);
@@ -51,6 +64,7 @@ export default function MedecinDashboard() {
     }
   };
 
+  // ✅ Ajouter une consultation
   const handleAddConsultation = async (e) => {
     e.preventDefault();
     if (!selectedPatientId || !diagnostic)
@@ -72,6 +86,24 @@ export default function MedecinDashboard() {
       alert("Erreur lors de l'ajout de la consultation");
     }
     setPosting(false);
+  };
+
+  // ✅ Changer l’image du médecin
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => setAvatar(reader.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // ✅ Réinitialiser la photo
+  const resetAvatar = () => {
+    localStorage.removeItem("medecinAvatar");
+    setAvatar(
+      "https://png.pngtree.com/png-clipart/20230918/ourmid/pngtree-photo-men-doctor-physician-chest-smiling-png-image_10132895.png"
+    );
   };
 
   if (loading)
@@ -111,51 +143,66 @@ export default function MedecinDashboard() {
 
       {/* Contenu principal */}
       <main className="dashboard-main">
-        {/* Header */}
-        
+        {/* ✅ Header amélioré */}
         <header className="dashboard-header">
-  <div className="header-left">
-    <h1>🩺 Tableau de bord Médecin</h1>
-  </div>
-  <div className="header-actions">
-    <button className="notif-btn">🔔</button>
-    <span className="doctor-name">Dr. Ahmed</span>
-    <img
-      src="https://png.pngtree.com/png-clipart/20230918/ourmid/pngtree-photo-men-doctor-physician-chest-smiling-png-image_10132895.png"
-      alt="Médecin"
-      className="doctor-avatar"
-    />
-  </div>
-</header>
+          <div className="header-left">
+            <h1>🩺 Tableau de bord Médecin</h1>
+          </div>
 
+          <div className="header-actions">
+            <button className="notif-btn">🔔</button>
+            <span className="doctor-name">Dr. Ahmed</span>
 
+            {/* ✅ Upload d’image persistante */}
+            <div className="avatar-upload">
+              <input
+                type="file"
+                id="avatarInput"
+                accept="image/*"
+                onChange={handleAvatarChange}
+                style={{ display: "none" }}
+              />
+              <img
+                src={avatar}
+                alt="Médecin"
+                className="doctor-avatar"
+                onClick={() => document.getElementById("avatarInput").click()}
+                title="Changer la photo"
+              />
+              <button onClick={resetAvatar} className="reset-btn" title="Réinitialiser">
+                🗑️
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {/* ✅ Sections dynamiques */}
         <div className="dashboard-content">
           {activeTab === "rendezvous" && (
-  <section className="card">
-    <h2>📅 Rendez-vous à venir</h2>
-    {rendezVous.length === 0 ? (
-      <p className="text-gray-500">Aucun rendez-vous.</p>
-    ) : (
-      <div className="rendezvous-list">
-        {rendezVous.map((rdv) => (
-          <div
-            key={rdv.id}
-            className="rendezvous-card p-4 mb-4 bg-white rounded-lg shadow-md hover:shadow-lg transition"
-          >
-            <p className="text-gray-700 font-semibold">
-              👤 {rdv.patient?.user?.name || "Inconnu"}
-            </p>
-            <p className="text-gray-500">
-              📅 {new Date(rdv.date).toLocaleString()}
-            </p>
-            {rdv.motif && <p className="text-gray-400">📝 {rdv.motif}</p>}
-          </div>
-        ))}
-      </div>
-    )}
-  </section>
-)}
-
+            <section className="card">
+              <h2>📅 Rendez-vous à venir</h2>
+              {rendezVous.length === 0 ? (
+                <p className="text-gray-500">Aucun rendez-vous.</p>
+              ) : (
+                <div className="rendezvous-list">
+                  {rendezVous.map((rdv) => (
+                    <div
+                      key={rdv.id}
+                      className="rendezvous-card p-4 mb-4 bg-white rounded-lg shadow-md hover:shadow-lg transition"
+                    >
+                      <p className="text-gray-700 font-semibold">
+                        👤 {rdv.patient?.user?.name || "Inconnu"}
+                      </p>
+                      <p className="text-gray-500">
+                        📅 {new Date(rdv.date).toLocaleString()}
+                      </p>
+                      {rdv.motif && <p className="text-gray-400">📝 {rdv.motif}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+          )}
 
           {activeTab === "ajouter" && (
             <section className="card">
@@ -216,42 +263,48 @@ export default function MedecinDashboard() {
           )}
 
           {activeTab === "consultations" && (
-  <section className="card">
-    <h2>📋 Liste des consultations</h2>
-    {consultations.length === 0 ? (
-      <p className="text-gray-500">Aucune consultation enregistrée.</p>
-    ) : (
-      <div className="overflow-x-auto">
-        <table className="consultations-table" style={{ width: "100%", borderCollapse: "collapse" }}>
-          <thead>
-            <tr style={{ background: "#f3f4f6" }}>
-              <th style={{ padding: "12px", textAlign: "left", borderBottom: "1px solid #ddd" }}>Patient</th>
-              <th style={{ padding: "12px", textAlign: "left", borderBottom: "1px solid #ddd" }}>Diagnostic</th>
-              <th style={{ padding: "12px", textAlign: "center", borderBottom: "1px solid #ddd" }}>Ordonnance</th>
-            </tr>
-          </thead>
-          <tbody>
-            {consultations.map((c) => (
-              <tr key={c.id} style={{ borderBottom: "1px solid #eee" }}>
-                <td style={{ padding: "12px" }}>{c.patient?.user?.name || "Inconnu"}</td>
-                <td style={{ padding: "12px" }}>{c.diagnostic}</td>
-                <td style={{ padding: "12px", textAlign: "center" }}>
-                  <button
-                    onClick={() => handleDownload(c.id)}
-                    className="btn-secondary"
+            <section className="card">
+              <h2>📋 Liste des consultations</h2>
+              {consultations.length === 0 ? (
+                <p className="text-gray-500">Aucune consultation enregistrée.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table
+                    className="consultations-table"
+                    style={{ width: "100%", borderCollapse: "collapse" }}
                   >
-                    📄 Télécharger
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )}
-  </section>
-)}
-
+                    <thead>
+                      <tr style={{ background: "#f3f4f6" }}>
+                        <th style={{ padding: "12px" }}>Patient</th>
+                        <th style={{ padding: "12px" }}>Diagnostic</th>
+                        <th style={{ padding: "12px", textAlign: "center" }}>
+                          Ordonnance
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {consultations.map((c) => (
+                        <tr key={c.id} style={{ borderBottom: "1px solid #eee" }}>
+                          <td style={{ padding: "12px" }}>
+                            {c.patient?.user?.name || "Inconnu"}
+                          </td>
+                          <td style={{ padding: "12px" }}>{c.diagnostic}</td>
+                          <td style={{ padding: "12px", textAlign: "center" }}>
+                            <button
+                              onClick={() => handleDownload(c.id)}
+                              className="btn-secondary"
+                            >
+                              📄 Télécharger
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </section>
+          )}
         </div>
       </main>
     </div>
