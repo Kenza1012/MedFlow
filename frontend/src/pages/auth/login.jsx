@@ -1,7 +1,7 @@
-import "./auth.css";
-import { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../services/api";
+import axios from "axios";
+import "./Auth.css"; // 🔹 même style que Register
 
 export default function Login() {
   const navigate = useNavigate();
@@ -11,52 +11,82 @@ export default function Login() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setMessage("");
+
     try {
-      const res = await api.post("/auth/login", { email, password });
-      console.log("✅ Login réussi :", res.data);
+      // 🔹 Appel à ton backend NestJS
+      const res = await axios.post("http://localhost:3000/auth/login", {
+        email,
+        password,
+      });
 
-      // 🔹 Stocker le token JWT
-      const token = res.data.access_token;
-localStorage.setItem("token", token);              // clé "token" pour être compatible avec le dashboard
-localStorage.setItem("user_role", res.data.user.role);
-localStorage.setItem("userId", res.data.user.id);  // 🔹 IMPORTANT pour medecinId
+      console.log("✅ Connexion réussie :", res.data);
+      const { access_token, user } = res.data;
 
-      // 🔹 Redirection selon rôle
-      const role = res.data.user.role;
-      if (role === "MEDECIN") navigate("/medecin/dashboard");
-      else if (role === "PATIENT") navigate("/patient/dashboard");
-      else if (role === "ADMIN") navigate("/admin/dashboard");
-      else navigate("/");
+      // 🔹 Sauvegarde du token + infos utilisateur
+      localStorage.setItem("token", access_token);
+      localStorage.setItem("user_role", user.role);
+      localStorage.setItem("user", JSON.stringify(user));
 
+      // 🔹 Redirection selon le rôle
+      switch (user.role) {
+        case "PATIENT":
+          navigate("/patient/dashboard");
+          break;
+        case "MEDECIN":
+          navigate("/medecin/dashboard");
+          break;
+        case "ADMIN":
+          navigate("/admin/dashboard");
+          break;
+        case "RECEPTIONNISTE":
+          navigate("/reception/dashboard");
+          break;
+        default:
+          navigate("/");
+      }
     } catch (err) {
       console.error("❌ Erreur de connexion :", err);
-      setMessage(err.response?.data?.message || "Erreur lors de la connexion.");
+      setMessage(
+        err.response?.data?.message ||
+          "❌ Email ou mot de passe incorrect."
+      );
     }
   };
 
   return (
     <div className="auth-container">
-      <h2>Connexion</h2>
-      <form onSubmit={handleLogin} className="auth-form">
-        <input
-          type="email"
-          placeholder="Adresse email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Mot de passe"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">Se connecter</button>
-      </form>
-      {message && <p className="auth-message">{message}</p>}
-      <div className="auth-footer">
-        Pas encore de compte ? <a href="/register">Créer un compte</a>
+      <div className="auth-card">
+        <h2>Connexion</h2>
+
+        <form onSubmit={handleLogin}>
+          <input
+            type="email"
+            placeholder="Adresse e-mail"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+
+          <input
+            type="password"
+            placeholder="Mot de passe"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+
+          <button type="submit">Se connecter</button>
+        </form>
+
+        {message && <p className="message">{message}</p>}
+
+        <div style={{ marginTop: "15px" }}>
+          <span>Pas encore de compte ? </span>
+          <a href="/register" style={{ color: "#2980b9", fontWeight: "600" }}>
+            Créer un compte
+          </a>
+        </div>
       </div>
     </div>
   );

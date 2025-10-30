@@ -1,3 +1,4 @@
+/* src/pages/patient/patient.css */
 .dashboard-container {
   display: flex;
   min-height: 100vh;
@@ -65,6 +66,7 @@
   font-weight: 600;
   cursor: pointer;
   transition: 0.3s;
+  color: white;
 }
 
 .logout-btn:hover {
@@ -97,7 +99,7 @@
   gap: 20px;
 }
 
-.doctor-avatar {
+.patient-avatar {
   width: 45px;
   height: 45px;
   border-radius: 50%;
@@ -105,7 +107,7 @@
   border: 2px solid #3b82f6;
 }
 
-.doctor-name {
+.patient-name {
   font-weight: 600;
   color: #1e293b;
 }
@@ -131,7 +133,15 @@
 }
 
 /* --- MAIN CONTENT --- */
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
 .dashboard-content {
+  flex: 1;
   padding: 40px;
   overflow-y: auto;
   animation: fadeIn 0.5s ease;
@@ -158,159 +168,34 @@
   color: #0f172a;
 }
 
-/* --- FORM --- */
-select,
-input {
-  width: 100%;
-  border: 1px solid #cbd5e1;
-  border-radius: 10px;
-  padding: 10px;
-  font-size: 0.95rem;
-  outline: none;
-}
-
-select:focus,
-input:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-}
-
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 10px;
-  padding: 10px 20px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.btn-primary:hover {
-  background: #2563eb;
-}
-
-.btn-secondary {
-  background: #10b981;
-  color: white;
-  border: none;
-  padding: 8px 14px;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: 0.3s;
-}
-
-.btn-secondary:hover {
-  background: #059669;
-}
-
-.btn-disabled {
-  background: #9ca3af;
-  color: #f3f4f6;
-  cursor: not-allowed;
-}
-
-/* --- ANIMATIONS --- */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-.dashboard-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background-color: #f9fafb;
-  padding: 15px 25px;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.header-left h1 {
-  font-size: 1.6rem;
-  color: #1f2937;
-  font-weight: 600;
-}
-
-.header-actions {
-  display: flex;
-  align-items: center;
+/* Informations Grid */
+.info-grid {
+  display: grid;
   gap: 15px;
 }
 
-.notif-btn {
-  background: none;
-  border: none;
-  font-size: 22px;
-  cursor: pointer;
-  color: #555;
-  transition: transform 0.2s;
-}
-
-.notif-btn:hover {
-  transform: scale(1.2);
-  color: #2563eb;
-}
-
-.doctor-name {
-  font-weight: 500;
-  color: #333;
-  font-size: 1.1rem;
-}
-
-.doctor-avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  border: 2px solid #2563eb;
-  object-fit: cover;
-  margin-left: 10px;
-}
-
-/* Assure que tout prend 100% de la hauteur */
-html, body, #root {
-  height: 100%;
-  margin: 0;
-}
-
-/* Container principal */
-.dashboard-container {
+.info-item {
   display: flex;
-  min-height: 100vh; /* tout l'écran */
-  font-family: 'Poppins', sans-serif;
-  background: #f1f5f9;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
 }
 
-/* Main prend tout l'espace restant à côté de la sidebar */
-.dashboard-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-/* Contenu scrollable si besoin */
-.dashboard-content {
-  flex: 1; /* prend tout l'espace disponible */
-  padding: 40px;
-  overflow-y: auto;
-}
-
-.consultations-table th {
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.consultations-table td {
+.info-item strong {
   color: #374151;
+  font-weight: 600;
 }
 
-.consultations-table tr:hover {
-  background: #f9fafb;
+.info-item span {
+  color: #6b7280;
 }
 
+/* Rendez-vous List */
 .rendezvous-list {
   display: flex;
   flex-direction: column;
+  gap: 15px;
 }
 
 .rendezvous-card {
@@ -325,17 +210,97 @@ html, body, #root {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.doctor-avatar {
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  cursor: pointer;
-  object-fit: cover;
-  border: 3px solid #007bff;
-  transition: transform 0.2s, box-shadow 0.2s;
+.rdv-date {
+  font-weight: 600;
+  color: #1e293b;
 }
 
-.doctor-avatar:hover {
-  transform: scale(1.05);
-  box-shadow: 0 0 10px rgba(0, 123, 255, 0.4);
+.rdv-motif {
+  color: #6b7280;
+  margin: 5px 0;
+}
+
+.rdv-medecin {
+  color: #374151;
+  font-style: italic;
+}
+
+.rdv-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.rdv-status.confirme {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.rdv-status.annule {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.rdv-status.en-attente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Factures Table */
+.factures-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.factures-table th,
+.factures-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.factures-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+}
+
+.factures-table tr:hover {
+  background: #f8fafc;
+}
+
+.statut {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.statut.paye {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.statut.non-paye {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.2rem;
+  color: #6b7280;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }

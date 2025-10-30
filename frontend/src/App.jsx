@@ -1,13 +1,14 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
+import Register from "./pages/auth/register";
 import MedecinDashboard from "./pages/medecin/MedecinDashboard";
-import PatientDashboard from "./pages/patient/PatientDashboard";
+import PatientDashboard from "./pages/patient/patientDashboard";
 import Layout from "./components/Layout"; // notre Layout avec Header/Footer
 
 function App() {
   return (
     <Router>
+  
       <Routes>
         {/* Pages publiques */}
         <Route path="/" element={<Login />} />
