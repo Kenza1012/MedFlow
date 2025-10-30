@@ -1,7 +1,10 @@
-import { Controller, Get, Post, Body, Param, Delete, Put } from '@nestjs/common';
+// patient.controller.ts
+import { Controller, Get, Post, Body, Param, Delete, Put, UseGuards } from '@nestjs/common';
 import { PatientService } from './patient.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 @Controller('patients')
+@UseGuards(JwtAuthGuard)
 export class PatientController {
   constructor(private readonly patientService: PatientService) {}
 
@@ -20,8 +23,26 @@ export class PatientController {
     return this.patientService.findOne(Number(id));
   }
 
+  // 🔹 NOUVEAU : Récupérer le patient par userId
+  @Get('user/:userId')
+  findByUserId(@Param('userId') userId: string) {
+    return this.patientService.findByUserId(Number(userId));
+  }
+
+  // 🔹 NOUVEAU : Récupérer les rendez-vous d'un patient
+  @Get(':id/rendezvous')
+  findRendezVous(@Param('id') id: string) {
+    return this.patientService.findRendezVous(Number(id));
+  }
+
+  // 🔹 NOUVEAU : Récupérer les factures d'un patient
+  @Get(':id/factures')
+  findFactures(@Param('id') id: string) {
+    return this.patientService.findFactures(Number(id));
+  }
+
   @Put(':id')
-  update(@Param('id') id: string, @Body() body) {
+  update(@Param('id') id: string, @Body() body: any) {
     return this.patientService.update(Number(id), body);
   }
 

@@ -1,0 +1,306 @@
+/* src/pages/patient/patient.css */
+.dashboard-container {
+  display: flex;
+  min-height: 100vh;
+  font-family: 'Poppins', sans-serif;
+  background: #f1f5f9;
+}
+
+/* --- SIDEBAR --- */
+.sidebar {
+  width: 260px;
+  background: linear-gradient(180deg, #0f172a, #1e293b);
+  color: white;
+  padding: 30px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.15);
+  position: sticky;
+  top: 0;
+}
+
+.sidebar h2 {
+  font-size: 1.4rem;
+  text-align: center;
+  font-weight: 700;
+  margin-bottom: 30px;
+  letter-spacing: 1px;
+  border-bottom: 2px solid #3b82f6;
+  padding-bottom: 10px;
+}
+
+.sidebar button {
+  background: transparent;
+  color: #e2e8f0;
+  border: none;
+  padding: 12px;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  text-align: left;
+  transition: 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar button:hover {
+  background: rgba(59, 130, 246, 0.2);
+  transform: translateX(5px);
+}
+
+.sidebar button.active {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.6);
+  transform: translateX(5px);
+}
+
+.logout-btn {
+  margin-top: auto;
+  background: #ef4444;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.3s;
+  color: white;
+}
+
+.logout-btn:hover {
+  background: #dc2626;
+}
+
+/* --- HEADER --- */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 20px 40px;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-left h1 {
+  font-size: 1.8rem;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.patient-avatar {
+  width: 45px;
+  height: 45px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #3b82f6;
+}
+
+.patient-name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.notif-btn {
+  background: #3b82f6;
+  color: white;
+  border: none;
+  font-size: 1.3rem;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: 0.3s;
+}
+
+.notif-btn:hover {
+  transform: scale(1.1);
+  background: #2563eb;
+}
+
+/* --- MAIN CONTENT --- */
+.dashboard-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.dashboard-content {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  animation: fadeIn 0.5s ease;
+}
+
+.card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  padding: 24px;
+  margin-bottom: 30px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.card h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: #0f172a;
+}
+
+/* Informations Grid */
+.info-grid {
+  display: grid;
+  gap: 15px;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.info-item strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+.info-item span {
+  color: #6b7280;
+}
+
+/* Rendez-vous List */
+.rendezvous-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.rendezvous-card {
+  border: 1px solid #e5e7eb;
+  padding: 15px;
+  border-radius: 12px;
+  background-color: white;
+  transition: box-shadow 0.3s;
+}
+
+.rendezvous-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.rdv-date {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.rdv-motif {
+  color: #6b7280;
+  margin: 5px 0;
+}
+
+.rdv-medecin {
+  color: #374151;
+  font-style: italic;
+}
+
+.rdv-status {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-top: 8px;
+}
+
+.rdv-status.confirme {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.rdv-status.annule {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.rdv-status.en-attente {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* Factures Table */
+.factures-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.factures-table th,
+.factures-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.factures-table th {
+  background: #f8fafc;
+  font-weight: 600;
+  color: #374151;
+}
+
+.factures-table tr:hover {
+  background: #f8fafc;
+}
+
+.statut {
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.statut.paye {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.statut.non-paye {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* Loading */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  font-size: 1.2rem;
+  color: #6b7280;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
