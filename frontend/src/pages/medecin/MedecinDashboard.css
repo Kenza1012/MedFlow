@@ -324,3 +324,18 @@ html, body, #root {
 .rendezvous-card:hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
+
+.doctor-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  cursor: pointer;
+  object-fit: cover;
+  border: 3px solid #007bff;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.doctor-avatar:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 10px rgba(0, 123, 255, 0.4);
+}
