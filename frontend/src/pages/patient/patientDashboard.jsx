@@ -1,20 +1,35 @@
-// src/pages/patient/PatientDashboard.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { fetchPatientInfo, fetchRendezVous, fetchFactures } from "../../services/patient";
+import {
+  fetchPatientInfo,
+  fetchRendezVous,
+  fetchFactures,
+  fetchMedecinsDisponibles,
+  reserverRendezVous,
+} from "../../services/patient";
 import "./patient.css";
 
 export default function PatientDashboard() {
   const [patientInfo, setPatientInfo] = useState(null);
   const [rendezVous, setRendezVous] = useState([]);
   const [factures, setFactures] = useState([]);
+  const [medecins, setMedecins] = useState([]);
+  const [selectedMedecin, setSelectedMedecin] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
+  const [motif, setMotif] = useState("");
   const [activeTab, setActiveTab] = useState("informations");
   const [loading, setLoading] = useState(true);
-  
-  const navigate = useNavigate();
-  const user = JSON.parse(localStorage.getItem("user"));
 
-  // 🔹 Déconnexion
+  const navigate = useNavigate();
+
+  /** 🔹 Récupère l'utilisateur connecté */
+  const { user, userId } = useMemo(() => {
+    const stored = localStorage.getItem("user");
+    const parsed = stored ? JSON.parse(stored) : null;
+    const id = parsed?.id || parsed?.userId || null;
+    return { user: parsed, userId: id };
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("access_token");
@@ -22,8 +37,10 @@ export default function PatientDashboard() {
     navigate("/");
   };
 
+  /** 🔹 Chargement initial des données */
   useEffect(() => {
-    if (!user) {
+    if (!userId) {
+      console.error("❌ Aucun userId trouvé dans le localStorage !");
       setLoading(false);
       return;
     }
@@ -31,64 +48,98 @@ export default function PatientDashboard() {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [info, rdv, fact] = await Promise.all([
-          fetchPatientInfo(user.id),
-          fetchRendezVous(user.id),
-          fetchFactures(user.id),
+        const [info, med] = await Promise.all([
+          fetchPatientInfo(userId),
+          fetchMedecinsDisponibles(),
         ]);
-        
+
         setPatientInfo(info);
-        setRendezVous(rdv);
-        setFactures(fact);
+
+        if (info?.id) {
+          // ✅ Récupère les rendez-vous et factures du patient
+          const [rdv, fact] = await Promise.all([
+            fetchRendezVous(info.id),
+            fetchFactures(info.id),
+          ]);
+          setRendezVous(rdv);
+          setFactures(fact);
+        } else {
+          console.warn("⚠️ Aucun dossier patient trouvé pour cet utilisateur.");
+        }
+
+        setMedecins(med);
       } catch (error) {
-        console.error("Erreur chargement données:", error);
+        console.error("❌ Erreur chargement données:", error);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [user]);
+  }, [userId]);
+
+  /** 🔹 Réservation d’un rendez-vous */
+  const handleReserver = async (e) => {
+  e.preventDefault();
+
+  if (!selectedMedecin || !selectedDate || !motif) {
+    alert("Veuillez sélectionner un médecin, une date et indiquer le motif.");
+    return;
+  }
+
+  if (!userId) {
+    alert("❌ Aucun utilisateur trouvé. Impossible de réserver.");
+    return;
+  }
+
+  try {
+    const data = {
+      userId: Number(userId),                       // ✅ backend attend userId
+      medecinId: Number(selectedMedecin),
+      date: new Date(selectedDate).toISOString(),   // ✅ format ISO
+      motif: motif.trim(),
+    };
+
+    const response = await reserverRendezVous(data);
+
+    alert("✅ Rendez-vous réservé avec succès !");
+    setSelectedMedecin("");
+    setSelectedDate("");
+    setMotif("");
+
+    // Recharge les rendez-vous
+    const updatedRdv = await fetchRendezVous(userId);
+    setRendezVous(updatedRdv);
+    setActiveTab("rendezvous");
+  } catch (err) {
+    console.error("❌ Erreur réservation:", err);
+    alert(err.response?.data?.message || "Erreur lors de la réservation du rendez-vous.");
+  }
+};
 
 
+  if (loading) {
+    return <div className="loading">⏳ Chargement des données...</div>;
+  }
 
   return (
     <div className="dashboard-container">
-      {/* --- Sidebar --- */}
+      {/* Sidebar */}
       <aside className="sidebar">
         <h2>🧍‍♂️ Patient</h2>
-        <button 
-          onClick={() => setActiveTab("informations")} 
-          className={activeTab === "informations" ? "active" : ""}
-        >
-          📘 Mes Informations
-        </button>
-        <button 
-          onClick={() => setActiveTab("rendezvous")} 
-          className={activeTab === "rendezvous" ? "active" : ""}
-        >
-          📅 Mes Rendez-vous
-        </button>
-        <button 
-          onClick={() => setActiveTab("factures")} 
-          className={activeTab === "factures" ? "active" : ""}
-        >
-          💳 Mes Factures
-        </button>
-        <button onClick={handleLogout} className="logout-btn">
-          🚪 Déconnexion
-        </button>
+        <button onClick={() => setActiveTab("informations")} className={activeTab === "informations" ? "active" : ""}>📘 Mes Informations</button>
+        <button onClick={() => setActiveTab("rendezvous")} className={activeTab === "rendezvous" ? "active" : ""}>📅 Mes Rendez-vous</button>
+        <button onClick={() => setActiveTab("reservation")} className={activeTab === "reservation" ? "active" : ""}>➕ Prendre un Rendez-vous</button>
+        <button onClick={() => setActiveTab("factures")} className={activeTab === "factures" ? "active" : ""}>💳 Mes Factures</button>
+        <button onClick={handleLogout} className="logout-btn">🚪 Déconnexion</button>
       </aside>
 
-      {/* --- Main Content --- */}
+      {/* Contenu principal */}
       <main className="dashboard-main">
         <header className="dashboard-header">
-          <div className="header-left">
-            <h1>📋 Tableau de bord Patient</h1>
-          </div>
+          <h1>📋 Tableau de bord Patient</h1>
           <div className="header-actions">
-            <button className="notif-btn">🔔</button>
-            <span className="patient-name">{user?.name}</span>
+            <span className="patient-name">{user?.name || "Utilisateur"}</span>
             <img
               src="https://cdn-icons-png.flaticon.com/512/219/219970.png"
               alt="Patient Avatar"
@@ -98,98 +149,115 @@ export default function PatientDashboard() {
         </header>
 
         <div className="dashboard-content">
-          {/* Section Informations */}
+          {/* 🧾 Informations */}
           {activeTab === "informations" && (
             <section className="card">
-              <h2>👤 Mes Informations</h2>
+              <h2>📘 Mes Informations</h2>
               {patientInfo ? (
-                <div className="info-grid">
-                  <div className="info-item">
-                    <strong>Nom :</strong> 
-                    <span>{patientInfo.user?.name || "-"}</span>
-                  </div>
-                  <div className="info-item">
-                    <strong>Email :</strong> 
-                    <span>{patientInfo.user?.email || "-"}</span>
-                  </div>
-                  <div className="info-item">
-                    <strong>Date de naissance :</strong> 
-                    <span>
-                      {patientInfo.dateNaissance 
-                        ? new Date(patientInfo.dateNaissance).toLocaleDateString('fr-FR')
-                        : "-"
-                      }
-                    </span>
-                  </div>
-                  <div className="info-item">
-                    <strong>Antécédents :</strong> 
-                    <span>{patientInfo.antecedents || "Aucun renseigné"}</span>
-                  </div>
-                </div>
+                <>
+                  <p><strong>Nom :</strong> {patientInfo.user?.name || "—"}</p>
+                  <p><strong>Email :</strong> {patientInfo.user?.email || "—"}</p>
+                  <p><strong>Date de naissance :</strong> {new Date(patientInfo.dateNaissance).toLocaleDateString()}</p>
+                  <p><strong>Antécédents :</strong> {patientInfo.antecedents || "—"}</p>
+                </>
               ) : (
-                <p>Aucune information disponible</p>
+                <p>⚠️ Aucun dossier patient trouvé.</p>
               )}
             </section>
           )}
 
-          {/* Section Rendez-vous */}
+          {/* 📅 Rendez-vous */}
           {activeTab === "rendezvous" && (
             <section className="card">
               <h2>📅 Mes Rendez-vous</h2>
-              {rendezVous.length === 0 ? (
-                <p>Aucun rendez-vous prévu.</p>
-              ) : (
-                <div className="rendezvous-list">
-                  {rendezVous.map((rdv) => (
-                    <div key={rdv.id} className="rendezvous-card">
-                      <div className="rdv-date">
-                        {new Date(rdv.date).toLocaleString('fr-FR')}
-                      </div>
-                      <div className="rdv-motif">{rdv.motif}</div>
-                      <div className="rdv-medecin">
-                        Dr. {rdv.medecin?.user?.name}
-                      </div>
-                      <div className={`rdv-status ${rdv.status?.toLowerCase()}`}>
-                        {rdv.status || "En attente"}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          )}
-
-          {/* Section Factures */}
-          {activeTab === "factures" && (
-            <section className="card">
-              <h2>💳 Mes Factures</h2>
-              {factures.length === 0 ? (
-                <p>Aucune facture disponible.</p>
-              ) : (
-                <table className="factures-table">
+              {rendezVous.length > 0 ? (
+                <table className="table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Montant (€)</th>
                       <th>Date</th>
-                      <th>Statut</th>
+                      <th>Motif</th>
+                      <th>Médecin</th>
+                      <th>Spécialité</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {factures.map((facture) => (
-                      <tr key={facture.id}>
-                        <td>#{facture.id}</td>
-                        <td>{facture.montant} €</td>
-                        <td>{new Date(facture.date).toLocaleDateString('fr-FR')}</td>
-                        <td>
-                          <span className={`statut ${facture.statut?.toLowerCase()}`}>
-                            {facture.statut}
-                          </span>
-                        </td>
+                    {rendezVous.map((rdv) => (
+                      <tr key={rdv.id}>
+                        <td>{new Date(rdv.date).toLocaleString()}</td>
+                        <td>{rdv.motif}</td>
+                        <td>{rdv.medecin?.user?.name || "—"}</td>
+                        <td>{rdv.medecin?.specialite || "—"}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
+              ) : (
+                <p>Aucun rendez-vous trouvé.</p>
+              )}
+            </section>
+          )}
+
+          {/* ➕ Réservation */}
+          {activeTab === "reservation" && (
+            <section className="card">
+              <h2>➕ Prendre un Rendez-vous</h2>
+              <form onSubmit={handleReserver} className="reservation-form">
+                <label>Médecin :</label>
+                <select value={selectedMedecin} onChange={(e) => setSelectedMedecin(e.target.value)}>
+                  <option value="">-- Sélectionnez un médecin --</option>
+                  {medecins.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.user?.name || m.nom || "Médecin"} ({m.specialite})
+                    </option>
+                  ))}
+                </select>
+
+                <label>Date :</label>
+                <input
+                  type="datetime-local"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                />
+
+                <label>Motif :</label>
+                <textarea
+                  placeholder="Ex : Consultation de suivi, douleur, etc."
+                  value={motif}
+                  onChange={(e) => setMotif(e.target.value)}
+                />
+
+                <button type="submit">✅ Réserver</button>
+              </form>
+            </section>
+          )}
+
+          {/* 💳 Factures */}
+          {activeTab === "factures" && (
+            <section className="card">
+              <h2>💳 Mes Factures</h2>
+              {factures.length > 0 ? (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>ID</th>
+                      <th>Montant</th>
+                      <th>Date</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {factures.map((fact) => (
+                      <tr key={fact.id}>
+                        <td>{fact.id}</td>
+                        <td>{fact.montant} DT</td>
+                        <td>{new Date(fact.date).toLocaleDateString()}</td>
+                        <td>{fact.status}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p>Aucune facture trouvée.</p>
               )}
             </section>
           )}

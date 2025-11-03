@@ -4,6 +4,7 @@ import Register from "./pages/auth/register";
 import MedecinDashboard from "./pages/medecin/MedecinDashboard";
 import PatientDashboard from "./pages/patient/patientDashboard";
 import Layout from "./components/Layout"; // notre Layout avec Header/Footer
+import ReceptionDashboard from "./pages/receptionniste/ReceptionDashboard";
 
 function App() {
   return (
@@ -31,10 +32,17 @@ function App() {
             </Layout>
           }
         />
+        <Route
+          path="/reception/dashboard"
+          element={
+            <Layout>
+              <ReceptionDashboard />    
+            </Layout>
+          }
+        />
         {/* Ajoute ici les autres dashboards */}
       </Routes>
     </Router>
   );
 }
-
 export default App;
