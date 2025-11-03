@@ -13,6 +13,15 @@ import { Role } from '../auth/role.enum';
 export class MedecinController {
   constructor(private readonly medecinService: MedecinService) {}
 
+   //  Nouvelle route pour récupérer tous les médecins disponibles
+ // ✅ Route publique (pour tous les utilisateurs connectés)
+  @Get()
+  @Roles(Role.PATIENT, Role.ADMIN, Role.MEDECIN, Role.RECEPTIONNISTE)
+ 
+  async getMedecinsDisponibles() {
+    return this.medecinService.getAllMedecinsDisponibles();
+  }
+
   @Get('rendezvous')
   async getRendezVous(@Req() req) {
     const medecin = await this.medecinService.findByUserId(req.user.userId);

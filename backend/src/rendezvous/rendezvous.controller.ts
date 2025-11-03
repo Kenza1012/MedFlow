@@ -20,7 +20,7 @@ export class RendezVousController {
     body: {
       date: string;
       motif: string;
-      patientId: number;
+      userId: number; // ✅ On remplace patientId par userId
       medecinId: number;
     },
   ) {
