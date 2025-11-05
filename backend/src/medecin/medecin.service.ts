@@ -18,6 +18,8 @@ export class MedecinService {
     });
   }
 
+  
+
   // 🔹 Obtenir tous les rendez-vous d'un médecin
   async getRendezVous(medecinId: number) {
     return this.prisma.rendezVous.findMany({
@@ -97,4 +99,21 @@ export class MedecinService {
       doc.on('end', () => resolve(Buffer.concat(result)));
     });
   }
+
+  // 🔹 Récupérer la liste de tous les médecins disponibles
+async getAllMedecinsDisponibles() {
+  return this.prisma.medecin.findMany({
+    // ou supprime cette ligne si tu n’as pas de champ "disponible"
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    },
+  });
+}
+
 }

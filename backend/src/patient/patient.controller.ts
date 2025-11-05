@@ -18,24 +18,23 @@ export class PatientController {
     return this.patientService.findAll();
   }
 
+  // ✅ 1️⃣ Cette route doit venir AVANT la route générique ":id"
+  @Get('user/:userId')
+async getPatientByUserId(@Param('userId') userId: string) {
+  return this.patientService.findByUserId(Number(userId));
+}
+
+  // ✅ 2️⃣ Route classique : patient par ID
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.patientService.findOne(Number(id));
   }
 
-  // 🔹 NOUVEAU : Récupérer le patient par userId
-  @Get('user/:userId')
-  findByUserId(@Param('userId') userId: string) {
-    return this.patientService.findByUserId(Number(userId));
-  }
-
-  // 🔹 NOUVEAU : Récupérer les rendez-vous d'un patient
   @Get(':id/rendezvous')
   findRendezVous(@Param('id') id: string) {
     return this.patientService.findRendezVous(Number(id));
   }
 
-  // 🔹 NOUVEAU : Récupérer les factures d'un patient
   @Get(':id/factures')
   findFactures(@Param('id') id: string) {
     return this.patientService.findFactures(Number(id));

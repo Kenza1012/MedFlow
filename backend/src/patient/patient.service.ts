@@ -43,24 +43,36 @@ export class PatientService {
   }
 
   // 🔹 NOUVEAU : Trouver patient par userId
-  async findByUserId(userId: number) {
-    const patient = await this.prisma.patient.findFirst({
-      where: { userId },
-      include: { 
-        user: true,
-        rendezVous: {
-          include: {
-            medecin: {
-              include: { user: true }
-            }
-          }
-        },
-        factures: true
-      },
-    });
-    if (!patient) throw new NotFoundException('Patient non trouvé');
-    return patient;
+  // src/patient/patient.service.ts
+async findByUserId(userId: number) {
+  const id = Number(userId);
+  if (isNaN(id)) {
+    throw new Error("❌ userId invalide ou manquant");
   }
+
+  const patient = await this.prisma.patient.findFirst({
+    where: { userId: id },
+    include: {
+      user: true,
+      rendezVous: {
+        include: {
+          medecin: {
+            include: {
+              user: true,
+            },
+          },
+        },
+      },
+      factures: true,
+    },
+  });
+
+  if (!patient) {
+    throw new Error(`⚠️ Aucun patient trouvé pour userId=${id}`);
+  }
+
+  return patient;
+}
 
   // 🔹 NOUVEAU : Récupérer les rendez-vous d'un patient
   async findRendezVous(patientId: number) {
