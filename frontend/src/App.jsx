@@ -7,6 +7,7 @@ import ReceptionDashboard from "./pages/receptionniste/ReceptionDashboard";
 import RendezVousForm from "./pages/receptionniste/RendezVousForm";
 import Layout from "./components/Layout"; // notre Layout avec Header/Footer
 
+
 function App() {
   return (
     <Router>
@@ -37,15 +38,16 @@ function App() {
           path="/reception/dashboard"
           element={
             <Layout>
+
               <ReceptionDashboard />
             </Layout>
           }
         />
       <Route path="/reception/rendezvous/new" element={<RendezVousForm />} />
+
         {/* Ajoute ici les autres dashboards */}
       </Routes>
     </Router>
   );
 }
-
 export default App;
