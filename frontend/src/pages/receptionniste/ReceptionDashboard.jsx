@@ -8,6 +8,7 @@ export default function ReceptionDashboard() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(true);
   const [showFactureModal, setShowFactureModal] = useState(false);
+  const [showPatientModal, setShowPatientModal] = useState(false);
   
   const [data, setData] = useState({
     rendezVous: [],
@@ -21,6 +22,14 @@ export default function ReceptionDashboard() {
     factureMontant: "",
     facturePatientId: "",
     factureConsultationId: ""
+  });
+
+  const [patientFormData, setPatientFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    dateNaissance: "",
+    antecedents: ""
   });
 
   // Informations du réceptionniste
@@ -118,6 +127,56 @@ export default function ReceptionDashboard() {
     } catch (error) {
       alert("Erreur lors du marquage de la facture");
       console.error(error);
+    }
+  };
+
+  // 🔹 Création d'un nouveau patient
+  const handleCreatePatient = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!patientFormData.name || !patientFormData.email || !patientFormData.password || !patientFormData.dateNaissance) {
+      alert("❌ Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    // Validation email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(patientFormData.email)) {
+      alert("❌ Email invalide");
+      return;
+    }
+
+    // Validation mot de passe (minimum 6 caractères)
+    if (patientFormData.password.length < 6) {
+      alert("❌ Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+
+    try {
+      await receptionnisteService.createPatient({
+        name: patientFormData.name.trim(),
+        email: patientFormData.email.trim().toLowerCase(),
+        password: patientFormData.password,
+        dateNaissance: patientFormData.dateNaissance,
+        antecedents: patientFormData.antecedents.trim() || undefined
+      });
+      
+      alert("✅ Patient créé avec succès !");
+      setShowPatientModal(false);
+      setPatientFormData({
+        name: "",
+        email: "",
+        password: "",
+        dateNaissance: "",
+        antecedents: ""
+      });
+      
+      await loadData();
+    } catch (error) {
+      console.error("Erreur création patient:", error);
+      const errorMessage = error.response?.data?.message || error.message;
+      alert(`❌ Erreur lors de la création du patient: ${errorMessage}`);
     }
   };
 
@@ -471,7 +530,16 @@ export default function ReceptionDashboard() {
           {/* Gestion des Patients */}
           {activeTab === "patients" && (
             <div className="reception-card">
-              <h2>👥 Gestion des Patients</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2>👥 Gestion des Patients</h2>
+                <button 
+                  className="btn-primary"
+                  onClick={() => setShowPatientModal(true)}
+                >
+                  + Nouveau Patient
+                </button>
+              </div>
+              
               {data.patients.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon">👥</div>
@@ -485,6 +553,7 @@ export default function ReceptionDashboard() {
                       <th>Nom</th>
                       <th>Email</th>
                       <th>Date de naissance</th>
+                      <th>Antécédents</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -495,6 +564,7 @@ export default function ReceptionDashboard() {
                         <td>{patient.user?.name || "Inconnu"}</td>
                         <td>{patient.user?.email || "Inconnu"}</td>
                         <td>{new Date(patient.dateNaissance).toLocaleDateString('fr-FR')}</td>
+                        <td>{patient.antecedents || "—"}</td>
                         <td>
                           <button className="btn-secondary">
                             Voir détails
@@ -509,6 +579,110 @@ export default function ReceptionDashboard() {
           )}
         </div>
       </main>
+
+      {/* Modal Nouveau Patient */}
+      {showPatientModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>👤 Nouveau Patient</h2>
+              <button 
+                className="modal-close"
+                onClick={() => {
+                  setShowPatientModal(false);
+                  setPatientFormData({
+                    name: "",
+                    email: "",
+                    password: "",
+                    dateNaissance: "",
+                    antecedents: ""
+                  });
+                }}
+              >
+                ×
+              </button>
+            </div>
+            <form onSubmit={handleCreatePatient} className="reception-form">
+              <div className="form-group">
+                <label>Nom complet *</label>
+                <input
+                  type="text"
+                  value={patientFormData.name}
+                  onChange={(e) => setPatientFormData({...patientFormData, name: e.target.value})}
+                  placeholder="Ex: Jean Dupont"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={patientFormData.email}
+                  onChange={(e) => setPatientFormData({...patientFormData, email: e.target.value})}
+                  placeholder="Ex: jean.dupont@example.com"
+                  required
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Mot de passe *</label>
+                <input
+                  type="password"
+                  value={patientFormData.password}
+                  onChange={(e) => setPatientFormData({...patientFormData, password: e.target.value})}
+                  placeholder="Minimum 6 caractères"
+                  required
+                  minLength={6}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Date de naissance *</label>
+                <input
+                  type="date"
+                  value={patientFormData.dateNaissance}
+                  onChange={(e) => setPatientFormData({...patientFormData, dateNaissance: e.target.value})}
+                  required
+                  max={new Date().toISOString().split('T')[0]}
+                />
+              </div>
+              
+              <div className="form-group reception-form-full">
+                <label>Antécédents médicaux (optionnel)</label>
+                <textarea
+                  value={patientFormData.antecedents}
+                  onChange={(e) => setPatientFormData({...patientFormData, antecedents: e.target.value})}
+                  placeholder="Ex: Diabète, hypertension, allergies..."
+                  rows="4"
+                />
+              </div>
+              
+              <div className="reception-form-full" style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '20px' }}>
+                <button 
+                  type="button" 
+                  className="btn-danger"
+                  onClick={() => {
+                    setShowPatientModal(false);
+                    setPatientFormData({
+                      name: "",
+                      email: "",
+                      password: "",
+                      dateNaissance: "",
+                      antecedents: ""
+                    });
+                  }}
+                >
+                  Annuler
+                </button>
+                <button type="submit" className="btn-primary">
+                  Créer le patient
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal Nouvelle Facture */}
       {showFactureModal && (

@@ -106,6 +106,18 @@ export const receptionnisteService = {
     }
   },
 
+  createPatient: async (data) => {
+    try {
+      console.log('📤 Création patient:', data);
+      const response = await api.post('/reception/patients', data);
+      console.log('✅ Patient créé:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erreur création patient:', error.response || error);
+      throw error;
+    }
+  },
+
   getAllMedecins: async () => {
     try {
       const response = await api.get('/reception/medecins');

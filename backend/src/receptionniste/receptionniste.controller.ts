@@ -93,6 +93,20 @@ export class ReceptionnisteController {
     return this.receptionnisteService.getAllPatients();
   }
 
+  @Post('patients')
+  async createPatient(
+    @Body()
+    body: {
+      name: string;
+      email: string;
+      password: string;
+      dateNaissance: string;
+      antecedents?: string;
+    },
+  ) {
+    return this.receptionnisteService.createPatient(body);
+  }
+
   @Get('medecins')
   async getAllMedecins() {
     return this.receptionnisteService.getAllMedecins();
