@@ -10,7 +10,7 @@ const getToken = () => localStorage.getItem("token") || localStorage.getItem("ac
  * 🔹 Retourne les headers d'authentification pour Axios
  */
 const getAuthHeaders = () => ({
-  headers: { Authorization: Bearer ${getToken()} },
+  headers: { Authorization: `Bearer ${getToken()}` },
 });
 
 /**
@@ -18,7 +18,7 @@ const getAuthHeaders = () => ({
  */
 export async function fetchPatientInfo(userId) {
   try {
-    const res = await api.get(${BASE_URL}/patients/user/${userId}, getAuthHeaders());
+    const res = await api.get(`${BASE_URL}/patients/user/${userId}`, getAuthHeaders());
     return res.data;
   } catch (error) {
     console.error("❌ Erreur fetchPatientInfo:", error.response?.data || error.message);
@@ -31,7 +31,7 @@ export async function fetchPatientInfo(userId) {
  */
 export async function fetchRendezVous(userId) {
   try {
-    const res = await api.get(${BASE_URL}/patients/${userId}/rendezvous, getAuthHeaders());
+    const res = await api.get(`${BASE_URL}/patients/${userId}/rendezvous`, getAuthHeaders());
     return res.data;
   } catch (error) {
     console.error("❌ Erreur fetchRendezVous:", error.response?.data || error.message);
@@ -44,11 +44,10 @@ export async function fetchRendezVous(userId) {
  */
 export async function fetchFactures(userId) {
   try {
-    const res = await api.get(${BASE_URL}/patients/${userId}/factures, getAuthHeaders());
+    const res = await api.get(`${BASE_URL}/patients/${userId}/factures`, getAuthHeaders());
     return res.data;
   } catch (error) {
     console.error("❌ Erreur fetchFactures:", error.response?.data || error.message);
     return [];
   }
 }
-localhost

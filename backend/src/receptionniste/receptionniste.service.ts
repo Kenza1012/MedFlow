@@ -146,4 +146,39 @@ export class ReceptionnisteService {
       include: { consultation: true },
     });
   }
+
+  // 🔹 NOUVEAUX ENDPOINTS : Récupérer tous les patients
+  async getAllPatients() {
+    return this.prisma.patient.findMany({
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+  }
+
+  // 🔹 NOUVEAUX ENDPOINTS : Récupérer tous les médecins
+  async getAllMedecins() {
+    return this.prisma.medecin.findMany({
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+  }
+
+  // 🔹 NOUVEAUX ENDPOINTS : Récupérer toutes les consultations
+  async getAllConsultations() {
+    return this.prisma.consultation.findMany({
+      include: {
+        patient: { include: { user: true } },
+        medecin: { include: { user: true } },
+      },
+      orderBy: { date: 'desc' },
+    });
+  }
 }

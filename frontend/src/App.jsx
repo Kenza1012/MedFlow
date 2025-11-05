@@ -3,6 +3,8 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/register";
 import MedecinDashboard from "./pages/medecin/MedecinDashboard";
 import PatientDashboard from "./pages/patient/patientDashboard";
+import ReceptionDashboard from "./pages/receptionniste/ReceptionDashboard";
+import RendezVousForm from "./pages/receptionniste/RendezVousForm";
 import Layout from "./components/Layout"; // notre Layout avec Header/Footer
 
 function App() {
@@ -31,6 +33,15 @@ function App() {
             </Layout>
           }
         />
+        <Route
+          path="/reception/dashboard"
+          element={
+            <Layout>
+              <ReceptionDashboard />
+            </Layout>
+          }
+        />
+      <Route path="/reception/rendezvous/new" element={<RendezVousForm />} />
         {/* Ajoute ici les autres dashboards */}
       </Routes>
     </Router>
