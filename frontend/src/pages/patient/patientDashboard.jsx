@@ -1,3 +1,4 @@
+// src/pages/patient/PatientDashboard.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -6,6 +7,8 @@ import {
   fetchFactures,
   fetchMedecinsDisponibles,
   reserverRendezVous,
+  annulerRendezVous,
+  modifierRendezVous,
 } from "../../services/patient";
 import "./patient.css";
 
@@ -17,12 +20,15 @@ export default function PatientDashboard() {
   const [selectedMedecin, setSelectedMedecin] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
   const [motif, setMotif] = useState("");
-  const [activeTab, setActiveTab] = useState("informations");
+  const [editRdvId, setEditRdvId] = useState(null);
+  const [editData, setEditData] = useState({ date: "", motif: "" });
+  const [activeTab, setActiveTab] = useState("rendezvous");
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const navigate = useNavigate();
 
-  /** 🔹 Récupère l'utilisateur connecté */
+  /** 🔹 Utilisateur connecté */
   const { user, userId } = useMemo(() => {
     const stored = localStorage.getItem("user");
     const parsed = stored ? JSON.parse(stored) : null;
@@ -30,20 +36,15 @@ export default function PatientDashboard() {
     return { user: parsed, userId: id };
   }, []);
 
+  /** 🔹 Déconnexion */
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("user");
+    localStorage.clear();
     navigate("/");
   };
 
-  /** 🔹 Chargement initial des données */
+  /** 🔹 Charger les données patient */
   useEffect(() => {
-    if (!userId) {
-      console.error("❌ Aucun userId trouvé dans le localStorage !");
-      setLoading(false);
-      return;
-    }
+    if (!userId) return;
 
     const loadData = async () => {
       setLoading(true);
@@ -54,160 +55,151 @@ export default function PatientDashboard() {
         ]);
 
         setPatientInfo(info);
+        setMedecins(med);
 
         if (info?.id) {
-          // ✅ Récupère les rendez-vous et factures du patient
           const [rdv, fact] = await Promise.all([
             fetchRendezVous(info.id),
             fetchFactures(info.id),
           ]);
           setRendezVous(rdv);
           setFactures(fact);
-        } else {
-          console.warn("⚠️ Aucun dossier patient trouvé pour cet utilisateur.");
         }
-
-        setMedecins(med);
-      } catch (error) {
-        console.error("❌ Erreur chargement données:", error);
+      } catch (err) {
+        console.error("Erreur chargement:", err);
       } finally {
         setLoading(false);
       }
     };
 
     loadData();
-  }, [userId]);
+  }, [userId, refreshKey]);
 
-  /** 🔹 Réservation d’un rendez-vous */
+  /** 🔹 Réserver un rendez-vous */
   const handleReserver = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  if (!selectedMedecin || !selectedDate || !motif) {
-    alert("Veuillez sélectionner un médecin, une date et indiquer le motif.");
-    return;
-  }
+    if (!selectedMedecin || !selectedDate || !motif) {
+      alert("Veuillez remplir tous les champs.");
+      return;
+    }
 
-  if (!userId) {
-    alert("❌ Aucun utilisateur trouvé. Impossible de réserver.");
-    return;
-  }
+    try {
+      const data = {
+        userId: Number(userId),
+        medecinId: Number(selectedMedecin),
+        date: new Date(selectedDate).toISOString(),
+        motif: motif.trim(),
+      };
 
-  try {
-    const data = {
-      userId: Number(userId),                       // ✅ backend attend userId
-      medecinId: Number(selectedMedecin),
-      date: new Date(selectedDate).toISOString(),   // ✅ format ISO
-      motif: motif.trim(),
-    };
+      await reserverRendezVous(data);
+      alert("✅ Rendez-vous réservé avec succès !");
+      setSelectedMedecin("");
+      setSelectedDate("");
+      setMotif("");
+      setRefreshKey((k) => k + 1);
+    } catch (err) {
+      console.error("Erreur réservation:", err);
+      alert(err.response?.data?.message || "Erreur lors de la réservation.");
+    }
+  };
 
-    const response = await reserverRendezVous(data);
+  /** ❌ Annuler rendez-vous */
+  const handleCancelRendezVous = async (id) => {
+    if (!window.confirm("Voulez-vous vraiment annuler ce rendez-vous ?")) return;
 
-    alert("✅ Rendez-vous réservé avec succès !");
-    setSelectedMedecin("");
-    setSelectedDate("");
-    setMotif("");
+    try {
+      await annulerRendezVous(id);
+      alert("✅ Rendez-vous annulé !");
+      setRefreshKey((k) => k + 1);
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de l'annulation du rendez-vous.");
+    }
+  };
 
-    // Recharge les rendez-vous
-    const updatedRdv = await fetchRendezVous(userId);
-    setRendezVous(updatedRdv);
-    setActiveTab("rendezvous");
-  } catch (err) {
-    console.error("❌ Erreur réservation:", err);
-    alert(err.response?.data?.message || "Erreur lors de la réservation du rendez-vous.");
-  }
-};
+  /** ✏️ Modifier rendez-vous */
+  const handleEditRendezVous = async (id) => {
+    if (!editData.date || !editData.motif) {
+      alert("Veuillez remplir les champs de modification.");
+      return;
+    }
 
+    try {
+      await modifierRendezVous(id, {
+        date: new Date(editData.date).toISOString(),
+        motif: editData.motif,
+      });
+      alert("✅ Rendez-vous modifié !");
+      setEditRdvId(null);
+      setRefreshKey((k) => k + 1);
+    } catch (error) {
+      console.error(error);
+      alert("Erreur lors de la modification.");
+    }
+  };
 
-  if (loading) {
-    return <div className="loading">⏳ Chargement des données...</div>;
-  }
+  if (loading) return <div className="loading">⏳ Chargement...</div>;
 
   return (
     <div className="dashboard-container">
-      {/* Sidebar */}
+      {/* === SIDEBAR === */}
       <aside className="sidebar">
         <h2>🧍‍♂️ Patient</h2>
-        <button onClick={() => setActiveTab("informations")} className={activeTab === "informations" ? "active" : ""}>📘 Mes Informations</button>
-        <button onClick={() => setActiveTab("rendezvous")} className={activeTab === "rendezvous" ? "active" : ""}>📅 Mes Rendez-vous</button>
-        <button onClick={() => setActiveTab("reservation")} className={activeTab === "reservation" ? "active" : ""}>➕ Prendre un Rendez-vous</button>
-        <button onClick={() => setActiveTab("factures")} className={activeTab === "factures" ? "active" : ""}>💳 Mes Factures</button>
-        <button onClick={handleLogout} className="logout-btn">🚪 Déconnexion</button>
+        <button
+          onClick={() => setActiveTab("informations")}
+          className={activeTab === "informations" ? "active" : ""}
+        >
+          Informations
+        </button>
+        <button
+          onClick={() => setActiveTab("rendezvous")}
+          className={activeTab === "rendezvous" ? "active" : ""}
+        >
+          Rendez-vous
+        </button>
+        <button
+          onClick={() => setActiveTab("factures")}
+          className={activeTab === "factures" ? "active" : ""}
+        >
+          Factures
+        </button>
+        <button onClick={handleLogout} className="logout-btn">
+          🚪 Déconnexion
+        </button>
       </aside>
 
-      {/* Contenu principal */}
+      {/* === MAIN === */}
       <main className="dashboard-main">
         <header className="dashboard-header">
           <h1>📋 Tableau de bord Patient</h1>
           <div className="header-actions">
-            <span className="patient-name">{user?.name || "Utilisateur"}</span>
+            <span className="patient-name">{user?.name}</span>
             <img
               src="https://cdn-icons-png.flaticon.com/512/219/219970.png"
-              alt="Patient Avatar"
+              alt="avatar"
               className="patient-avatar"
             />
           </div>
         </header>
 
         <div className="dashboard-content">
-          {/* 🧾 Informations */}
-          {activeTab === "informations" && (
-            <section className="card">
-              <h2>📘 Mes Informations</h2>
-              {patientInfo ? (
-                <>
-                  <p><strong>Nom :</strong> {patientInfo.user?.name || "—"}</p>
-                  <p><strong>Email :</strong> {patientInfo.user?.email || "—"}</p>
-                  <p><strong>Date de naissance :</strong> {new Date(patientInfo.dateNaissance).toLocaleDateString()}</p>
-                  <p><strong>Antécédents :</strong> {patientInfo.antecedents || "—"}</p>
-                </>
-              ) : (
-                <p>⚠️ Aucun dossier patient trouvé.</p>
-              )}
-            </section>
-          )}
-
-          {/* 📅 Rendez-vous */}
+          {/* === RDV === */}
           {activeTab === "rendezvous" && (
             <section className="card">
               <h2>📅 Mes Rendez-vous</h2>
-              {rendezVous.length > 0 ? (
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Motif</th>
-                      <th>Médecin</th>
-                      <th>Spécialité</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rendezVous.map((rdv) => (
-                      <tr key={rdv.id}>
-                        <td>{new Date(rdv.date).toLocaleString()}</td>
-                        <td>{rdv.motif}</td>
-                        <td>{rdv.medecin?.user?.name || "—"}</td>
-                        <td>{rdv.medecin?.specialite || "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p>Aucun rendez-vous trouvé.</p>
-              )}
-            </section>
-          )}
 
-          {/* ➕ Réservation */}
-          {activeTab === "reservation" && (
-            <section className="card">
-              <h2>➕ Prendre un Rendez-vous</h2>
+              {/* Formulaire de réservation */}
               <form onSubmit={handleReserver} className="reservation-form">
                 <label>Médecin :</label>
-                <select value={selectedMedecin} onChange={(e) => setSelectedMedecin(e.target.value)}>
+                <select
+                  value={selectedMedecin}
+                  onChange={(e) => setSelectedMedecin(e.target.value)}
+                >
                   <option value="">-- Sélectionnez un médecin --</option>
                   {medecins.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.user?.name || m.nom || "Médecin"} ({m.specialite})
+                      {m.user?.name || "Médecin"} ({m.specialite})
                     </option>
                   ))}
                 </select>
@@ -221,43 +213,129 @@ export default function PatientDashboard() {
 
                 <label>Motif :</label>
                 <textarea
-                  placeholder="Ex : Consultation de suivi, douleur, etc."
+                  placeholder="Ex: consultation, douleur..."
                   value={motif}
                   onChange={(e) => setMotif(e.target.value)}
                 />
 
                 <button type="submit">✅ Réserver</button>
               </form>
-            </section>
-          )}
 
-          {/* 💳 Factures */}
-          {activeTab === "factures" && (
-            <section className="card">
-              <h2>💳 Mes Factures</h2>
-              {factures.length > 0 ? (
+              {/* Liste des RDV */}
+              <h3 style={{ marginTop: "30px" }}>Mes rendez-vous</h3>
+              {rendezVous.length > 0 ? (
                 <table className="table">
                   <thead>
                     <tr>
-                      <th>ID</th>
-                      <th>Montant</th>
                       <th>Date</th>
-                      <th>Status</th>
+                      <th>Motif</th>
+                      <th>Médecin</th>
+                      <th>Spécialité</th>
+                      <th>Statut</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {factures.map((fact) => (
-                      <tr key={fact.id}>
-                        <td>{fact.id}</td>
-                        <td>{fact.montant} DT</td>
-                        <td>{new Date(fact.date).toLocaleDateString()}</td>
-                        <td>{fact.status}</td>
-                      </tr>
+                    {rendezVous.map((rdv) => (
+                      <React.Fragment key={rdv.id}>
+                        <tr>
+                          <td>{new Date(rdv.date).toLocaleString()}</td>
+                          <td>{rdv.motif}</td>
+                          <td>{rdv.medecin?.user?.name}</td>
+                          <td>{rdv.medecin?.specialite}</td>
+                          <td>
+                            <span
+                              className={`rdv-status ${rdv.status
+                                ?.toLowerCase()
+                                .replace(" ", "-")}`}
+                            >
+                              {rdv.status}
+                            </span>
+                          </td>
+                          <td style={{ display: "flex", gap: "8px" }}>
+                            <button
+                              className="btn-secondary"
+                              disabled={rdv.status === "Annulé"}
+                              onClick={() => {
+                                setEditRdvId(rdv.id);
+                                setEditData({
+                                  date: rdv.date.slice(0, 16),
+                                  motif: rdv.motif,
+                                });
+                              }}
+                            >
+                              ✏️ Modifier
+                            </button>
+                            <button
+                              className="btn-danger"
+                              disabled={rdv.status === "Annulé"}
+                              onClick={() => handleCancelRendezVous(rdv.id)}
+                            >
+                              ❌ Annuler
+                            </button>
+                          </td>
+                        </tr>
+
+                        {/* Ligne de modification inline */}
+                        {editRdvId === rdv.id && (
+                          <tr className="edit-row">
+                            <td colSpan="6">
+                              <form
+                                onSubmit={(e) => {
+                                  e.preventDefault();
+                                  handleEditRendezVous(rdv.id);
+                                }}
+                                className="edit-form"
+                              >
+                                <label>Nouvelle date :</label>
+                                <input
+                                  type="datetime-local"
+                                  value={editData.date}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      date: e.target.value,
+                                    })
+                                  }
+                                />
+
+                                <label>Nouveau motif :</label>
+                                <input
+                                  type="text"
+                                  value={editData.motif}
+                                  onChange={(e) =>
+                                    setEditData({
+                                      ...editData,
+                                      motif: e.target.value,
+                                    })
+                                  }
+                                />
+
+                                <div style={{ marginTop: "10px" }}>
+                                  <button
+                                    type="submit"
+                                    className="btn-primary"
+                                  >
+                                    💾 Enregistrer
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="btn-danger"
+                                    onClick={() => setEditRdvId(null)}
+                                  >
+                                    Annuler
+                                  </button>
+                                </div>
+                              </form>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
                     ))}
                   </tbody>
                 </table>
               ) : (
-                <p>Aucune facture trouvée.</p>
+                <p>Aucun rendez-vous.</p>
               )}
             </section>
           )}

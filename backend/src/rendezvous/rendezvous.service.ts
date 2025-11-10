@@ -79,4 +79,61 @@ export class RendezVousService {
       throw new BadRequestException('Erreur lors de la récupération de tous les rendez-vous');
     }
   }
+  // ✅ Modifier un rendez-vous (changer date, motif...)
+  async update(id: number, data: any) {
+    const rdv = await this.prisma.rendezVous.findUnique({ where: { id } });
+    if (!rdv) throw new NotFoundException(`Rendez-vous ${id} non trouvé`);
+
+    return this.prisma.rendezVous.update({
+      where: { id },
+      data,
+      include: {
+        patient: { include: { user: true } },
+        medecin: { include: { user: true } },
+      },
+    });
+  }
+
+  // ✅ Annuler un rendez-vous
+  async annuler(id: number) {
+    const rdv = await this.prisma.rendezVous.findUnique({ where: { id } });
+    if (!rdv) throw new NotFoundException(`Rendez-vous ${id} non trouvé`);
+
+    return this.prisma.rendezVous.update({
+      where: { id },
+      data: { status: 'Annulé' },
+      include: {
+        patient: { include: { user: true } },
+        medecin: { include: { user: true } },
+      },
+    });
+  }
+
+  // 🧩 Exemple des autres fonctions
+  async findAll() {
+    return this.prisma.rendezVous.findMany({
+      include: {
+        patient: { include: { user: true } },
+        medecin: { include: { user: true } },
+      },
+      orderBy: { date: 'desc' },
+    });
+  }
+
+  async findOne(id: number) {
+    const rdv = await this.prisma.rendezVous.findUnique({
+      where: { id },
+      include: {
+        patient: { include: { user: true } },
+        medecin: { include: { user: true } },
+      },
+    });
+    if (!rdv) throw new NotFoundException(`Rendez-vous ${id} non trouvé`);
+    return rdv;
+  }
+
+  async remove(id: number) {
+    return this.prisma.rendezVous.delete({ where: { id } });
+  }
+
 }

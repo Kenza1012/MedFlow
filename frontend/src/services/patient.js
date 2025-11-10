@@ -78,4 +78,40 @@ export async function reserverRendezVous(data) {
     throw error;
   }
 }
+/**
+ * ❌ Annuler un rendez-vous
+ */
+export async function annulerRendezVous(rdvId) {
+  try {
+    const res = await api.patch(
+      `http://localhost:3000/rendezvous/${rdvId}/annuler`,
+      {}, // corps vide
+      getAuthHeaders()
+    );
+    console.log("✅ Rendez-vous annulé:", res.data);
+    return res.data;
+  } catch (error) {
+    console.error("❌ Erreur annulation rendez-vous:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
+/**
+ * ✏️ Modifier un rendez-vous
+ */
+export async function modifierRendezVous(rdvId, data) {
+  try {
+    const res = await api.patch(
+      `http://localhost:3000/rendezvous/${rdvId}`,
+      data,
+      getAuthHeaders()
+    );
+    console.log("✅ Rendez-vous modifié:", res.data);
+    return res.data;
+  } catch (error) {
+    console.error("❌ Erreur modification rendez-vous:", error.response?.data || error.message);
+    throw error;
+  }
+}
+
 
