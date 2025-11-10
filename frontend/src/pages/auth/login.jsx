@@ -14,21 +14,17 @@ export default function Login() {
     setMessage("");
 
     try {
-      // 🔹 Appel à ton backend NestJS
       const res = await axios.post("http://localhost:3000/auth/login", {
         email,
         password,
       });
 
-      console.log("✅ Connexion réussie :", res.data);
       const { access_token, user } = res.data;
 
-      // 🔹 Sauvegarde du token + infos utilisateur
       localStorage.setItem("token", access_token);
       localStorage.setItem("user_role", user.role);
       localStorage.setItem("user", JSON.stringify(user));
 
-      // 🔹 Redirection selon le rôle
       switch (user.role) {
         case "PATIENT":
           navigate("/patient/dashboard");
@@ -48,14 +44,14 @@ export default function Login() {
     } catch (err) {
       console.error("❌ Erreur de connexion :", err);
       setMessage(
-        err.response?.data?.message ||
-          "❌ Email ou mot de passe incorrect."
+        err.response?.data?.message || "❌ Email ou mot de passe incorrect."
       );
     }
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container login">
+      {/* La classe 'login' déclenche l’image de fond */}
       <div className="auth-card">
         <h2>Connexion</h2>
 
@@ -83,9 +79,7 @@ export default function Login() {
 
         <div style={{ marginTop: "15px" }}>
           <span>Pas encore de compte ? </span>
-          <a href="/register" style={{ color: "#2980b9", fontWeight: "600" }}>
-            Créer un compte
-          </a>
+          <a href="/register">Créer un compte</a>
         </div>
       </div>
     </div>

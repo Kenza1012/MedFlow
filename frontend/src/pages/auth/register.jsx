@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import axios from "axios";
-import "./Auth.css"; // le style qu’on fera juste après
+import "./Auth.css"; // même style que Login
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -35,7 +35,8 @@ export default function Register() {
   };
 
   return (
-    <div className="auth-container">
+    <div className="auth-container register">
+      {/* La classe 'register' déclenche l’image de fond */}
       <div className="auth-card">
         <h2>Créer un compte patient</h2>
 
@@ -64,7 +65,6 @@ export default function Register() {
             onChange={handleChange}
             required
           />
-        
           <input
             type="date"
             name="dateNaissance"

@@ -9,7 +9,7 @@ const getToken = () => localStorage.getItem("token");
 export const getRendezVous = async () => {
   const token = getToken();
   if (!token) {
-    console.warn("⚠️ Token manquant pour getRendezVous");
+    console.warn(" Token manquant pour getRendezVous");
     return [];
   }
   try {
@@ -27,7 +27,7 @@ export const getRendezVous = async () => {
 export const getConsultations = async () => {
   const token = getToken();
   if (!token) {
-    console.warn("⚠️ Token manquant pour getConsultations");
+    console.warn(" Token manquant pour getConsultations");
     return [];
   }
   try {

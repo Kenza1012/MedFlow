@@ -22,6 +22,13 @@ export class MedecinController {
     return this.medecinService.getAllMedecinsDisponibles();
   }
 
+  @Get('me')
+async getCurrentMedecin(@Req() req) {
+  const medecin = await this.medecinService.findByUserId(req.user.userId);
+  if (!medecin) throw new NotFoundException('Médecin non trouvé');
+  return medecin;
+}
+
   @Get('rendezvous')
   async getRendezVous(@Req() req) {
     const medecin = await this.medecinService.findByUserId(req.user.userId);

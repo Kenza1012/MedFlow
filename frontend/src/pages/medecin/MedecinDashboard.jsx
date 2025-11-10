@@ -55,6 +55,20 @@ export default function MedecinDashboard() {
     fetchData();
   }, []);
 
+  const [medecin, setMedecin] = useState(null);
+
+useEffect(() => {
+  const userData = localStorage.getItem("user");
+  if (userData) {
+    try {
+      setMedecin(JSON.parse(userData));
+    } catch (err) {
+      console.error("Erreur parsing user:", err);
+    }
+  }
+}, []);
+
+
   // ✅ Télécharger une ordonnance
   const handleDownload = async (consultationId) => {
     try {
@@ -98,7 +112,7 @@ export default function MedecinDashboard() {
     }
   };
 
-  // ✅ Réinitialiser la photo
+  //  Réinitialiser la photo
   const resetAvatar = () => {
     localStorage.removeItem("medecinAvatar");
     setAvatar(
@@ -150,8 +164,13 @@ export default function MedecinDashboard() {
           </div>
 
           <div className="header-actions">
-            <button className="notif-btn">🔔</button>
-            <span className="doctor-name">Dr. Ahmed</span>
+  <button className="notif-btn"></button>
+
+  {/* ✅ Nom dynamique du médecin connecté */}
+  <span className="doctor-name">
+    {medecin ? `Dr. ${medecin.name || medecin.username}` : "Chargement..."}
+  </span>
+
 
             {/* ✅ Upload d’image persistante */}
             <div className="avatar-upload">
