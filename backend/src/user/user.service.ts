@@ -69,7 +69,14 @@ export class UserService {
             data: { userId: user.id },
           });
           break;
+
+      case 'ADMIN':
+  break;
+        default:
+          throw new Error('Rôle invalide.');
       }
+
+      
 
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...userWithoutPassword } = user;

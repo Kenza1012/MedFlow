@@ -1,11 +1,14 @@
+// frontend/src/App.jsx - Version mise à jour avec route Admin
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/register";
 import Home from "./pages/Home"; // Nouvelle page Home
 import MedecinDashboard from "./pages/medecin/MedecinDashboard";
 import PatientDashboard from "./pages/patient/patientDashboard";
-import Layout from "./components/Layout"; // notre Layout avec Header/Footer
 import ReceptionDashboard from "./pages/receptionniste/ReceptionDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import RendezVousForm from "./pages/receptionniste/RendezVousForm";
+import Layout from "./components/Layout";
 
 function App() {
   return (
@@ -38,6 +41,23 @@ function App() {
           element={
             <Layout>
               <ReceptionDashboard />    
+            </Layout>
+          }
+        />
+        <Route
+          path="/admin/dashboard"
+          element={
+          <Layout>
+            <AdminDashboard />
+          </Layout>
+          }
+          // Route pour le dashboard Admin
+        />
+        <Route
+          path="/reception/rendezvous"
+          element={
+            <Layout>
+              <RendezVousForm />
             </Layout>
           }
         />

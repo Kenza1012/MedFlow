@@ -10,6 +10,7 @@ import { PatientModule } from './patient/patient.module';
 import { MedecinModule } from './medecin/medecin.module';
 import { RendezvousModule } from './rendezvous/rendezvous.module';
 import { ReceptionnisteModule } from './receptionniste/receptionniste.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { ReceptionnisteModule } from './receptionniste/receptionniste.module';
     MedecinModule,
     RendezvousModule,
     ReceptionnisteModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, AuthService],

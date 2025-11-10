@@ -10,6 +10,20 @@ export default function ReceptionDashboard() {
   const [showFactureModal, setShowFactureModal] = useState(false);
   const [showPatientModal, setShowPatientModal] = useState(false);
   
+  // États pour les filtres
+  const [filters, setFilters] = useState({
+    // Filtres rendez-vous
+    rdvDateFilter: "today", // today, week, month, all
+    rdvPatientFilter: "",
+    rdvMedecinFilter: "",
+    
+    // Filtres factures
+    factureStatutFilter: "all", // all, paid, unpaid
+    
+    // Filtres patients
+    patientNameFilter: ""
+  });
+
   const [data, setData] = useState({
     rendezVous: [],
     factures: [],
@@ -74,6 +88,127 @@ export default function ReceptionDashboard() {
     loadData();
   }, []);
 
+  // 🔹 FONCTIONS DE FILTRAGE
+
+  // 1. Filtrer les rendez-vous par période (jour/semaine/mois)
+  const getFilteredRendezVous = () => {
+    let filtered = [...data.rendezVous];
+
+    // Filtre par période
+    const now = new Date();
+    switch (filters.rdvDateFilter) {
+      case "today":
+        filtered = filtered.filter(rdv => 
+          new Date(rdv.date).toDateString() === now.toDateString()
+        );
+        break;
+      case "week": {
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23, 59, 59, 999);
+        
+        filtered = filtered.filter(rdv => {
+          const rdvDate = new Date(rdv.date);
+          return rdvDate >= startOfWeek && rdvDate <= endOfWeek;
+        });
+        break;
+      }
+      case "month": {
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+        
+        filtered = filtered.filter(rdv => {
+          const rdvDate = new Date(rdv.date);
+          return rdvDate >= startOfMonth && rdvDate <= endOfMonth;
+        });
+        break;
+      }
+      case "all":
+      default:
+        // Pas de filtre de date
+        break;
+    }
+
+    // Filtre par nom de patient
+    if (filters.rdvPatientFilter) {
+      filtered = filtered.filter(rdv => 
+        rdv.patient?.user?.name?.toLowerCase().includes(filters.rdvPatientFilter.toLowerCase()) ||
+        rdv.patient?.user?.email?.toLowerCase().includes(filters.rdvPatientFilter.toLowerCase())
+      );
+    }
+
+    // Filtre par nom de médecin
+    if (filters.rdvMedecinFilter) {
+      filtered = filtered.filter(rdv => 
+        rdv.medecin?.user?.name?.toLowerCase().includes(filters.rdvMedecinFilter.toLowerCase()) ||
+        rdv.medecin?.specialite?.toLowerCase().includes(filters.rdvMedecinFilter.toLowerCase())
+      );
+    }
+
+    return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+  };
+
+  // 2. Filtrer les factures par statut
+  const getFilteredFactures = () => {
+    let filtered = [...data.factures];
+
+    switch (filters.factureStatutFilter) {
+      case "paid":
+        filtered = filtered.filter(f => f.statut === "Payé");
+        break;
+      case "unpaid":
+        filtered = filtered.filter(f => f.statut === "Non payé");
+        break;
+      case "all":
+      default:
+        // Toutes les factures
+        break;
+    }
+
+    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
+
+  // 3. Filtrer les patients par nom
+  const getFilteredPatients = () => {
+    let filtered = [...data.patients];
+
+    if (filters.patientNameFilter) {
+      filtered = filtered.filter(patient => 
+        patient.user?.name?.toLowerCase().includes(filters.patientNameFilter.toLowerCase()) ||
+        patient.user?.email?.toLowerCase().includes(filters.patientNameFilter.toLowerCase())
+      );
+    }
+
+    return filtered.sort((a, b) => a.user?.name?.localeCompare(b.user?.name));
+  };
+
+  // 4. Rendez-vous du jour pour le tableau de bord
+  const getRendezVousAujourdhui = () => {
+    const today = new Date().toDateString();
+    return data.rendezVous.filter(rdv => 
+      new Date(rdv.date).toDateString() === today
+    ).sort((a, b) => new Date(a.date) - new Date(b.date));
+  };
+
+  // Données filtrées
+  const filteredRendezVous = getFilteredRendezVous();
+  const filteredFactures = getFilteredFactures();
+  const filteredPatients = getFilteredPatients();
+  const rendezVousAujourdhui = getRendezVousAujourdhui();
+
+  // Gestion des filtres
+  const handleFilterChange = (filterName, value) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterName]: value
+    }));
+  };
+
+
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("user_role");
@@ -130,24 +265,21 @@ export default function ReceptionDashboard() {
     }
   };
 
-  // 🔹 Création d'un nouveau patient
+  // Création d'un nouveau patient
   const handleCreatePatient = async (e) => {
     e.preventDefault();
     
-    // Validation
     if (!patientFormData.name || !patientFormData.email || !patientFormData.password || !patientFormData.dateNaissance) {
       alert("❌ Veuillez remplir tous les champs obligatoires");
       return;
     }
 
-    // Validation email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(patientFormData.email)) {
       alert("❌ Email invalide");
       return;
     }
 
-    // Validation mot de passe (minimum 6 caractères)
     if (patientFormData.password.length < 6) {
       alert("❌ Le mot de passe doit contenir au moins 6 caractères");
       return;
@@ -180,20 +312,6 @@ export default function ReceptionDashboard() {
     }
   };
 
-  // 🔹 Fonction pour vérifier si deux dates sont le même jour
-  const isSameDay = (date1, date2) => {
-    const d1 = new Date(date1);
-    const d2 = new Date(date2);
-    return d1.getFullYear() === d2.getFullYear() &&
-           d1.getMonth() === d2.getMonth() &&
-           d1.getDate() === d2.getDate();
-  };
-
-  // 🔹 Filtrer les rendez-vous d'aujourd'hui
-  const rendezVousAujourdhui = data.rendezVous.filter(rdv => 
-    isSameDay(rdv.date, new Date())
-  );
-
   // Statistiques dynamiques
   const stats = {
     totalRendezVous: data.rendezVous.length,
@@ -208,6 +326,7 @@ export default function ReceptionDashboard() {
     return (
       <div className="loading-spinner">
         <div className="spinner"></div>
+        <p>Chargement des données...</p>
       </div>
     );
   }
@@ -290,14 +409,16 @@ export default function ReceptionDashboard() {
               </div>
 
               <div className="reception-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="card-header-with-filters">
                   <h2>📅 Rendez-vous du jour</h2>
-                  <button 
-                    className="btn-primary"
-                    onClick={() => navigate("/reception/rendezvous/new")}
-                  >
-                    + Nouveau RDV
-                  </button>
+                  <div className="header-actions">
+                    <button 
+                      className="btn-primary"
+                      onClick={() => navigate("/reception/rendezvous/new")}
+                    >
+                      + Nouveau RDV
+                    </button>
+                  </div>
                 </div>
                 {rendezVousAujourdhui.length === 0 ? (
                   <div className="empty-state">
@@ -317,37 +438,35 @@ export default function ReceptionDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {rendezVousAujourdhui
-                        .sort((a, b) => new Date(a.date) - new Date(b.date))
-                        .map(rdv => (
-                          <tr key={rdv.id}>
-                            <td>{new Date(rdv.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</td>
-                            <td>{rdv.patient?.user?.name || "Inconnu"}</td>
-                            <td>Dr. {rdv.medecin?.user?.name || "Inconnu"}</td>
-                            <td>{rdv.motif}</td>
-                            <td>
-                              <span className={`status-badge status-${rdv.status?.toLowerCase().replace('é', 'e') || 'programme'}`}>
-                                {rdv.status}
-                              </span>
-                            </td>
-                            <td>
-                              <button 
-                                className="btn-danger"
-                                onClick={() => handleCancelRendezVous(rdv.id)}
-                                disabled={rdv.status === "Annulé"}
-                              >
-                                Annuler
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
+                      {rendezVousAujourdhui.map(rdv => (
+                        <tr key={rdv.id}>
+                          <td>{new Date(rdv.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</td>
+                          <td>{rdv.patient?.user?.name || "Inconnu"}</td>
+                          <td>Dr. {rdv.medecin?.user?.name || "Inconnu"}</td>
+                          <td>{rdv.motif}</td>
+                          <td>
+                            <span className={`status-badge status-${rdv.status?.toLowerCase().replace('é', 'e') || 'programme'}`}>
+                              {rdv.status}
+                            </span>
+                          </td>
+                          <td>
+                            <button 
+                              className="btn-danger"
+                              onClick={() => handleCancelRendezVous(rdv.id)}
+                              disabled={rdv.status === "Annulé"}
+                            >
+                              Annuler
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 )}
               </div>
 
               <div className="reception-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div className="card-header-with-filters">
                   <h2>💰 Factures en attente</h2>
                   <button 
                     className="btn-primary"
@@ -402,23 +521,85 @@ export default function ReceptionDashboard() {
             </>
           )}
 
-          {/* Gestion des Rendez-vous */}
+          {/* Gestion des Rendez-vous avec filtres */}
           {activeTab === "rendezvous" && (
             <div className="reception-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div className="card-header-with-filters">
                 <h2>📅 Gestion des Rendez-vous</h2>
+                <div className="header-actions">
+                  <button 
+                    className="btn-primary"
+                    onClick={() => navigate("/reception/rendezvous/new")}
+                  >
+                    + Nouveau RDV
+                  </button>
+                  <button 
+                    className="btn-secondary"
+                    onClick={loadData}
+                  >
+                    🔄 Actualiser
+                  </button>
+                </div>
+              </div>
+
+              {/* Filtres Rendez-vous */}
+              <div className="filters-container">
+                <div className="filter-group">
+                  <label>Période:</label>
+                  <select 
+                    value={filters.rdvDateFilter}
+                    onChange={(e) => handleFilterChange("rdvDateFilter", e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="today">Aujourd'hui</option>
+                    <option value="week">Cette semaine</option>
+                    <option value="month">Ce mois</option>
+                    <option value="all">Tous</option>
+                  </select>
+                </div>
+
+                <div className="filter-group">
+                  <label>Patient:</label>
+                  <input
+                    type="text"
+                    placeholder="Rechercher par patient..."
+                    value={filters.rdvPatientFilter}
+                    onChange={(e) => handleFilterChange("rdvPatientFilter", e.target.value)}
+                    className="filter-input"
+                  />
+                </div>
+
+                <div className="filter-group">
+                  <label>Médecin:</label>
+                  <input
+                    type="text"
+                    placeholder="Rechercher par médecin..."
+                    value={filters.rdvMedecinFilter}
+                    onChange={(e) => handleFilterChange("rdvMedecinFilter", e.target.value)}
+                    className="filter-input"
+                  />
+                </div>
+
                 <button 
-                  className="btn-primary"
-                  onClick={() => navigate("/reception/rendezvous/new")}
+                  className="btn-secondary"
+                  onClick={() => {
+                    handleFilterChange("rdvDateFilter", "all");
+                    handleFilterChange("rdvPatientFilter", "");
+                    handleFilterChange("rdvMedecinFilter", "");
+                  }}
                 >
-                  + Nouveau RDV
+                  🔄 Réinitialiser
                 </button>
               </div>
+
+              <div className="results-count">
+                {filteredRendezVous.length} rendez-vous trouvés
+              </div>
               
-              {data.rendezVous.length === 0 ? (
+              {filteredRendezVous.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon">📅</div>
-                  <p>Aucun rendez-vous programmé</p>
+                  <p>Aucun rendez-vous correspondant aux critères</p>
                 </div>
               ) : (
                 <table className="reception-table">
@@ -434,43 +615,41 @@ export default function ReceptionDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.rendezVous
-                      .sort((a, b) => new Date(b.date) - new Date(a.date))
-                      .map(rdv => (
-                        <tr key={rdv.id}>
-                          <td>{new Date(rdv.date).toLocaleDateString('fr-FR')}</td>
-                          <td>{new Date(rdv.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</td>
-                          <td>{rdv.patient?.user?.name || "Inconnu"}</td>
-                          <td>Dr. {rdv.medecin?.user?.name || "Inconnu"}</td>
-                          <td>{rdv.motif}</td>
-                          <td>
-                            <span className={`status-badge status-${rdv.status?.toLowerCase().replace('é', 'e') || 'programme'}`}>
-                              {rdv.status}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={{ display: 'flex', gap: '8px' }}>
-                              <button 
-                                className="btn-danger"
-                                onClick={() => handleCancelRendezVous(rdv.id)}
-                                disabled={rdv.status === "Annulé"}
-                              >
-                                Annuler
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                    {filteredRendezVous.map(rdv => (
+                      <tr key={rdv.id}>
+                        <td>{new Date(rdv.date).toLocaleDateString('fr-FR')}</td>
+                        <td>{new Date(rdv.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</td>
+                        <td>{rdv.patient?.user?.name || "Inconnu"}</td>
+                        <td>Dr. {rdv.medecin?.user?.name || "Inconnu"}</td>
+                        <td>{rdv.motif}</td>
+                        <td>
+                          <span className={`status-badge status-${rdv.status?.toLowerCase().replace('é', 'e') || 'programme'}`}>
+                            {rdv.status}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', gap: '8px' }}>
+                            <button 
+                              className="btn-danger"
+                              onClick={() => handleCancelRendezVous(rdv.id)}
+                              disabled={rdv.status === "Annulé"}
+                            >
+                              Annuler
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               )}
             </div>
           )}
 
-          {/* Gestion des Factures */}
+          {/* Gestion des Factures avec filtres */}
           {activeTab === "factures" && (
             <div className="reception-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div className="card-header-with-filters">
                 <h2>💰 Gestion des Factures</h2>
                 <button 
                   className="btn-primary"
@@ -479,11 +658,38 @@ export default function ReceptionDashboard() {
                   + Nouvelle Facture
                 </button>
               </div>
+
+              {/* Filtres Factures */}
+              <div className="filters-container">
+                <div className="filter-group">
+                  <label>Statut:</label>
+                  <select 
+                    value={filters.factureStatutFilter}
+                    onChange={(e) => handleFilterChange("factureStatutFilter", e.target.value)}
+                    className="filter-select"
+                  >
+                    <option value="all">Tous les statuts</option>
+                    <option value="paid">Payées</option>
+                    <option value="unpaid">Non payées</option>
+                  </select>
+                </div>
+
+                <button 
+                  className="btn-secondary"
+                  onClick={() => handleFilterChange("factureStatutFilter", "all")}
+                >
+                  🔄 Réinitialiser
+                </button>
+              </div>
+
+              <div className="results-count">
+                {filteredFactures.length} factures trouvées
+              </div>
               
-              {data.factures.length === 0 ? (
+              {filteredFactures.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon">💰</div>
-                  <p>Aucune facture enregistrée</p>
+                  <p>Aucune facture correspondante aux critères</p>
                 </div>
               ) : (
                 <table className="reception-table">
@@ -498,7 +704,7 @@ export default function ReceptionDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.factures.map(facture => (
+                    {filteredFactures.map(facture => (
                       <tr key={facture.id}>
                         <td>{new Date(facture.date).toLocaleDateString('fr-FR')}</td>
                         <td>{facture.patient?.user?.name || "Inconnu"}</td>
@@ -527,10 +733,10 @@ export default function ReceptionDashboard() {
             </div>
           )}
 
-          {/* Gestion des Patients */}
+          {/* Gestion des Patients avec filtres */}
           {activeTab === "patients" && (
             <div className="reception-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+              <div className="card-header-with-filters">
                 <h2>👥 Gestion des Patients</h2>
                 <button 
                   className="btn-primary"
@@ -539,11 +745,36 @@ export default function ReceptionDashboard() {
                   + Nouveau Patient
                 </button>
               </div>
+
+              {/* Filtres Patients */}
+              <div className="filters-container">
+                <div className="filter-group">
+                  <label>Rechercher:</label>
+                  <input
+                    type="text"
+                    placeholder="Nom ou email du patient..."
+                    value={filters.patientNameFilter}
+                    onChange={(e) => handleFilterChange("patientNameFilter", e.target.value)}
+                    className="filter-input"
+                  />
+                </div>
+
+                <button 
+                  className="btn-secondary"
+                  onClick={() => handleFilterChange("patientNameFilter", "")}
+                >
+                  🔄 Réinitialiser
+                </button>
+              </div>
+
+              <div className="results-count">
+                {filteredPatients.length} patients trouvés
+              </div>
               
-              {data.patients.length === 0 ? (
+              {filteredPatients.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon">👥</div>
-                  <p>Aucun patient enregistré</p>
+                  <p>Aucun patient correspondant aux critères</p>
                 </div>
               ) : (
                 <table className="reception-table">
@@ -558,7 +789,7 @@ export default function ReceptionDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.patients.map(patient => (
+                    {filteredPatients.map(patient => (
                       <tr key={patient.id}>
                         <td>{patient.id}</td>
                         <td>{patient.user?.name || "Inconnu"}</td>
