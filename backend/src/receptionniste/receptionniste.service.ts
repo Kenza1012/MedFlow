@@ -146,4 +146,85 @@ export class ReceptionnisteService {
       include: { consultation: true },
     });
   }
+
+  // 🔹 NOUVEAUX ENDPOINTS : Récupérer tous les patients
+  async getAllPatients() {
+    return this.prisma.patient.findMany({
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+  }
+
+  // 🔹 NOUVEAU : Créer un patient avec son utilisateur
+  async createPatient(data: {
+    name: string;
+    email: string;
+    password: string;
+    dateNaissance: string;
+    antecedents?: string;
+  }) {
+    const bcrypt = require('bcrypt');
+    
+    // Vérifier si l'email existe déjà
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: data.email },
+    });
+
+    if (existingUser) {
+      throw new Error('Un utilisateur avec cet email existe déjà');
+    }
+
+    // Hasher le mot de passe
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+
+    // Créer l'utilisateur et le patient en une seule transaction
+    const patient = await this.prisma.patient.create({
+      data: {
+        dateNaissance: new Date(data.dateNaissance),
+        antecedents: data.antecedents,
+        user: {
+          create: {
+            name: data.name,
+            email: data.email,
+            password: hashedPassword,
+            role: 'PATIENT',
+          },
+        },
+      },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, role: true },
+        },
+      },
+    });
+
+    return patient;
+  }
+
+  // 🔹 NOUVEAUX ENDPOINTS : Récupérer tous les médecins
+  async getAllMedecins() {
+    return this.prisma.medecin.findMany({
+      include: {
+        user: {
+          select: { id: true, name: true, email: true },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+  }
+
+  // 🔹 NOUVEAUX ENDPOINTS : Récupérer toutes les consultations
+  async getAllConsultations() {
+    return this.prisma.consultation.findMany({
+      include: {
+        patient: { include: { user: true } },
+        medecin: { include: { user: true } },
+      },
+      orderBy: { date: 'desc' },
+    });
+  }
 }

@@ -100,4 +100,29 @@ export class UserService {
   async deleteUser(id: number) {
     return this.prisma.user.delete({ where: { id } });
   }
+
+  // 🔹 Récupérer tous les patients
+  async getPatients() {
+    return this.prisma.user.findMany({
+      where: { role: 'PATIENT' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+  }
+
+  // 🔹 Récupérer tous les médecins
+  async getMedecins() {
+    return this.prisma.user.findMany({
+      where: { role: 'MEDECIN' },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+      },
+    });
+  }
+
 }

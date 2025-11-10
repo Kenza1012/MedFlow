@@ -1,13 +1,25 @@
 import api from './api';
 
 export const receptionnisteService = {
-  // 🔹 Rendez-vous
+  // 🔹 Rendez-vous - CORRECTION: envoyer "date" au lieu de "dateHeure"
   createRendezVous: async (data) => {
     try {
-      const response = await api.post('/reception/rendezvous', data);
+      console.log('📤 Service: Envoi au backend:', data);
+      
+      // ✅ S'assurer que la clé est "date" pour le backend
+      const payload = {
+        date: data.date || data.dateHeure, // Accepte les deux formats
+        motif: data.motif,
+        patientId: data.patientId,
+        medecinId: data.medecinId
+      };
+      
+      console.log('📤 Payload final:', payload);
+      const response = await api.post('/reception/rendezvous', payload);
+      console.log('✅ Réponse backend:', response.data);
       return response.data;
     } catch (error) {
-      console.error('Erreur création rendez-vous:', error);
+      console.error('❌ Erreur création rendez-vous:', error.response || error);
       throw error;
     }
   },
@@ -83,7 +95,7 @@ export const receptionnisteService = {
     }
   },
 
-  // 🔹 NOUVEAU : Récupérer tous les patients
+  // 🔹 Patients, Médecins et Consultations
   getAllPatients: async () => {
     try {
       const response = await api.get('/reception/patients');
@@ -94,7 +106,18 @@ export const receptionnisteService = {
     }
   },
 
-  // 🔹 NOUVEAU : Récupérer tous les médecins
+  createPatient: async (data) => {
+    try {
+      console.log('📤 Création patient:', data);
+      const response = await api.post('/reception/patients', data);
+      console.log('✅ Patient créé:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('❌ Erreur création patient:', error.response || error);
+      throw error;
+    }
+  },
+
   getAllMedecins: async () => {
     try {
       const response = await api.get('/reception/medecins');
@@ -105,7 +128,6 @@ export const receptionnisteService = {
     }
   },
 
-  // 🔹 NOUVEAU : Récupérer toutes les consultations
   getAllConsultations: async () => {
     try {
       const response = await api.get('/reception/consultations');

@@ -709,4 +709,249 @@
     border: 1px solid #ddd;
     margin-bottom: 20px;
   }
+
+  /* Styles pour l'affichage des rendez-vous par jour */
+
+.date-selector-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.date-controls {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+}
+
+.date-picker {
+  padding: 8px 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 5px;
+  font-size: 14px;
+}
+
+.rendezvous-date-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.rendezvous-date-header h3 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 1.3em;
+}
+
+.rdv-count {
+  background: #3498db;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.9em;
+  font-weight: 600;
+}
+
+.rendezvous-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.rendezvous-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.rendezvous-card:hover {
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
+
+.rdv-time {
+  font-size: 1.2em;
+  font-weight: bold;
+  color: #2c3e50;
+  min-width: 80px;
+}
+
+.rdv-info {
+  flex: 1;
+  margin: 0 20px;
+}
+
+.rdv-patient, .rdv-medecin, .rdv-motif {
+  margin-bottom: 5px;
+  font-size: 0.95em;
+}
+
+.rdv-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  min-width: 150px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-small {
+  padding: 6px 12px;
+  font-size: 0.85em;
+}
+
+/* Styles pour la vue calendrier complète */
+.rendezvous-full-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.rendezvous-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.date-section {
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.date-section-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.date-section-header h3 {
+  margin: 0;
+  font-size: 1.2em;
+}
+
+.date-section .rendezvous-cards {
+  padding: 20px;
+  background: #f8f9fa;
+}
+
+/* Amélioration des statuts */
+.status-programme {
+  background: #3498db;
+  color: white;
+}
+
+.status-confirme {
+  background: #27ae60;
+  color: white;
+}
+
+.status-annule {
+  background: #e74c3c;
+  color: white;
+}
+
+.status-termine {
+  background: #95a5a6;
+  color: white;
+}
+
+.status-non-paye {
+  background: #e74c3c;
+  color: white;
+}
+
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.85em;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .rendezvous-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .rdv-info {
+    margin: 0;
+    width: 100%;
+  }
+  
+  .rdv-actions {
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .date-selector-header,
+  .rendezvous-full-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .date-controls,
+  .header-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* Animation de chargement améliorée */
+.loading-spinner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px;
+  text-align: center;
+}
+
+.spinner {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #3498db;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
 }

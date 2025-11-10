@@ -17,7 +17,7 @@ import { Role } from '../auth/role.enum';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(Role.RECEPTIONNISTE)
-@Controller('reception') // ⬅️ CHANGER ICI : 'reception' au lieu de 'receptionniste'
+@Controller('reception')
 export class ReceptionnisteController {
   constructor(private readonly receptionnisteService: ReceptionnisteService) {}
 
@@ -85,6 +85,36 @@ export class ReceptionnisteController {
   @Get('factures/patient/:patientId')
   async getFacturesByPatient(@Param('patientId') patientId: string) {
     return this.receptionnisteService.getFacturesByPatient(Number(patientId));
+  }
+
+  // 🔹 NOUVEAUX ENDPOINTS POUR PATIENTS, MEDECINS ET CONSULTATIONS
+  @Get('patients')
+  async getAllPatients() {
+    return this.receptionnisteService.getAllPatients();
+  }
+
+  @Post('patients')
+  async createPatient(
+    @Body()
+    body: {
+      name: string;
+      email: string;
+      password: string;
+      dateNaissance: string;
+      antecedents?: string;
+    },
+  ) {
+    return this.receptionnisteService.createPatient(body);
+  }
+
+  @Get('medecins')
+  async getAllMedecins() {
+    return this.receptionnisteService.getAllMedecins();
+  }
+
+  @Get('consultations')
+  async getAllConsultations() {
+    return this.receptionnisteService.getAllConsultations();
   }
 
   // 🔹 GESTION DU PROFIL RÉCEPTIONNISTE

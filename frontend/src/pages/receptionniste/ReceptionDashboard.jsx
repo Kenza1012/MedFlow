@@ -7,8 +7,8 @@ export default function ReceptionDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [loading, setLoading] = useState(true);
-  const [showRendezVousModal, setShowRendezVousModal] = useState(false);
   const [showFactureModal, setShowFactureModal] = useState(false);
+  const [showPatientModal, setShowPatientModal] = useState(false);
   
   const [data, setData] = useState({
     rendezVous: [],
@@ -19,16 +19,17 @@ export default function ReceptionDashboard() {
   });
 
   const [formData, setFormData] = useState({
-    // Rendez-vous
-    rdvDate: "",
-    rdvMotif: "",
-    rdvPatientId: "",
-    rdvMedecinId: "",
-    
-    // Facture
     factureMontant: "",
     facturePatientId: "",
     factureConsultationId: ""
+  });
+
+  const [patientFormData, setPatientFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    dateNaissance: "",
+    antecedents: ""
   });
 
   // Informations du réceptionniste
@@ -81,31 +82,6 @@ export default function ReceptionDashboard() {
     navigate("/");
   };
 
-  const handleCreateRendezVous = async (e) => {
-    e.preventDefault();
-    try {
-      await receptionnisteService.createRendezVous({
-        date: formData.rdvDate,
-        motif: formData.rdvMotif,
-        patientId: parseInt(formData.rdvPatientId),
-        medecinId: parseInt(formData.rdvMedecinId)
-      });
-      
-      alert("Rendez-vous créé avec succès !");
-      setShowRendezVousModal(false);
-      setFormData({
-        ...formData,
-        rdvDate: "", rdvMotif: "", rdvPatientId: "", rdvMedecinId: ""
-      });
-      
-      // Recharger les données
-      await loadData();
-    } catch (error) {
-      alert("Erreur lors de la création du rendez-vous");
-      console.error(error);
-    }
-  };
-
   const handleCancelRendezVous = async (id) => {
     if (window.confirm("Êtes-vous sûr de vouloir annuler ce rendez-vous ?")) {
       try {
@@ -131,8 +107,9 @@ export default function ReceptionDashboard() {
       alert("Facture créée avec succès !");
       setShowFactureModal(false);
       setFormData({
-        ...formData,
-        factureMontant: "", facturePatientId: "", factureConsultationId: ""
+        factureMontant: "",
+        facturePatientId: "",
+        factureConsultationId: ""
       });
       
       await loadData();
@@ -153,14 +130,74 @@ export default function ReceptionDashboard() {
     }
   };
 
-  // Statistiques
+  // 🔹 Création d'un nouveau patient
+  const handleCreatePatient = async (e) => {
+    e.preventDefault();
+    
+    // Validation
+    if (!patientFormData.name || !patientFormData.email || !patientFormData.password || !patientFormData.dateNaissance) {
+      alert("❌ Veuillez remplir tous les champs obligatoires");
+      return;
+    }
+
+    // Validation email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(patientFormData.email)) {
+      alert("❌ Email invalide");
+      return;
+    }
+
+    // Validation mot de passe (minimum 6 caractères)
+    if (patientFormData.password.length < 6) {
+      alert("❌ Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+
+    try {
+      await receptionnisteService.createPatient({
+        name: patientFormData.name.trim(),
+        email: patientFormData.email.trim().toLowerCase(),
+        password: patientFormData.password,
+        dateNaissance: patientFormData.dateNaissance,
+        antecedents: patientFormData.antecedents.trim() || undefined
+      });
+      
+      alert("✅ Patient créé avec succès !");
+      setShowPatientModal(false);
+      setPatientFormData({
+        name: "",
+        email: "",
+        password: "",
+        dateNaissance: "",
+        antecedents: ""
+      });
+      
+      await loadData();
+    } catch (error) {
+      console.error("Erreur création patient:", error);
+      const errorMessage = error.response?.data?.message || error.message;
+      alert(`❌ Erreur lors de la création du patient: ${errorMessage}`);
+    }
+  };
+
+  // 🔹 Fonction pour vérifier si deux dates sont le même jour
+  const isSameDay = (date1, date2) => {
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  };
+
+  // 🔹 Filtrer les rendez-vous d'aujourd'hui
+  const rendezVousAujourdhui = data.rendezVous.filter(rdv => 
+    isSameDay(rdv.date, new Date())
+  );
+
+  // Statistiques dynamiques
   const stats = {
     totalRendezVous: data.rendezVous.length,
-    rdvAujourdhui: data.rendezVous.filter(rdv => {
-      const rdvDate = new Date(rdv.date);
-      const today = new Date();
-      return rdvDate.toDateString() === today.toDateString();
-    }).length,
+    rdvAujourdhui: rendezVousAujourdhui.length,
     facturesImpayees: data.factures.filter(f => f.statut === "Non payé").length,
     chiffreAffaires: data.factures
       .filter(f => f.statut === "Payé")
@@ -257,16 +294,12 @@ export default function ReceptionDashboard() {
                   <h2>📅 Rendez-vous du jour</h2>
                   <button 
                     className="btn-primary"
-                    onClick={() => setShowRendezVousModal(true)}
+                    onClick={() => navigate("/reception/rendezvous/new")}
                   >
                     + Nouveau RDV
                   </button>
                 </div>
-                {data.rendezVous.filter(rdv => {
-                  const rdvDate = new Date(rdv.date);
-                  const today = new Date();
-                  return rdvDate.toDateString() === today.toDateString();
-                }).length === 0 ? (
+                {rendezVousAujourdhui.length === 0 ? (
                   <div className="empty-state">
                     <div className="empty-state-icon">📅</div>
                     <p>Aucun rendez-vous aujourd'hui</p>
@@ -284,17 +317,13 @@ export default function ReceptionDashboard() {
                       </tr>
                     </thead>
                     <tbody>
-                      {data.rendezVous
-                        .filter(rdv => {
-                          const rdvDate = new Date(rdv.date);
-                          const today = new Date();
-                          return rdvDate.toDateString() === today.toDateString();
-                        })
+                      {rendezVousAujourdhui
+                        .sort((a, b) => new Date(a.date) - new Date(b.date))
                         .map(rdv => (
                           <tr key={rdv.id}>
                             <td>{new Date(rdv.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</td>
                             <td>{rdv.patient?.user?.name || "Inconnu"}</td>
-                            <td>{rdv.medecin?.user?.name || "Inconnu"}</td>
+                            <td>Dr. {rdv.medecin?.user?.name || "Inconnu"}</td>
                             <td>{rdv.motif}</td>
                             <td>
                               <span className={`status-badge status-${rdv.status?.toLowerCase().replace('é', 'e') || 'programme'}`}>
@@ -305,6 +334,7 @@ export default function ReceptionDashboard() {
                               <button 
                                 className="btn-danger"
                                 onClick={() => handleCancelRendezVous(rdv.id)}
+                                disabled={rdv.status === "Annulé"}
                               >
                                 Annuler
                               </button>
@@ -379,7 +409,7 @@ export default function ReceptionDashboard() {
                 <h2>📅 Gestion des Rendez-vous</h2>
                 <button 
                   className="btn-primary"
-                  onClick={() => setShowRendezVousModal(true)}
+                  onClick={() => navigate("/reception/rendezvous/new")}
                 >
                   + Nouveau RDV
                 </button>
@@ -395,6 +425,7 @@ export default function ReceptionDashboard() {
                   <thead>
                     <tr>
                       <th>Date</th>
+                      <th>Heure</th>
                       <th>Patient</th>
                       <th>Médecin</th>
                       <th>Motif</th>
@@ -403,32 +434,33 @@ export default function ReceptionDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.rendezVous.map(rdv => (
-                      <tr key={rdv.id}>
-                        <td>{new Date(rdv.date).toLocaleString('fr-FR')}</td>
-                        <td>{rdv.patient?.user?.name || "Inconnu"}</td>
-                        <td>{rdv.medecin?.user?.name || "Inconnu"}</td>
-                        <td>{rdv.motif}</td>
-                        <td>
-                          <span className={`status-badge status-${rdv.status?.toLowerCase().replace('é', 'e') || 'programme'}`}>
-                            {rdv.status}
-                          </span>
-                        </td>
-                        <td>
-                          <div style={{ display: 'flex', gap: '8px' }}>
-                            <button className="btn-warning">
-                              Modifier
-                            </button>
-                            <button 
-                              className="btn-danger"
-                              onClick={() => handleCancelRendezVous(rdv.id)}
-                            >
-                              Annuler
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                    {data.rendezVous
+                      .sort((a, b) => new Date(b.date) - new Date(a.date))
+                      .map(rdv => (
+                        <tr key={rdv.id}>
+                          <td>{new Date(rdv.date).toLocaleDateString('fr-FR')}</td>
+                          <td>{new Date(rdv.date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</td>
+                          <td>{rdv.patient?.user?.name || "Inconnu"}</td>
+                          <td>Dr. {rdv.medecin?.user?.name || "Inconnu"}</td>
+                          <td>{rdv.motif}</td>
+                          <td>
+                            <span className={`status-badge status-${rdv.status?.toLowerCase().replace('é', 'e') || 'programme'}`}>
+                              {rdv.status}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                              <button 
+                                className="btn-danger"
+                                onClick={() => handleCancelRendezVous(rdv.id)}
+                                disabled={rdv.status === "Annulé"}
+                              >
+                                Annuler
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
                   </tbody>
                 </table>
               )}
@@ -498,7 +530,16 @@ export default function ReceptionDashboard() {
           {/* Gestion des Patients */}
           {activeTab === "patients" && (
             <div className="reception-card">
-              <h2>👥 Gestion des Patients</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                <h2>👥 Gestion des Patients</h2>
+                <button 
+                  className="btn-primary"
+                  onClick={() => setShowPatientModal(true)}
+                >
+                  + Nouveau Patient
+                </button>
+              </div>
+              
               {data.patients.length === 0 ? (
                 <div className="empty-state">
                   <div className="empty-state-icon">👥</div>
@@ -511,6 +552,8 @@ export default function ReceptionDashboard() {
                       <th>ID</th>
                       <th>Nom</th>
                       <th>Email</th>
+                      <th>Date de naissance</th>
+                      <th>Antécédents</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
@@ -518,8 +561,10 @@ export default function ReceptionDashboard() {
                     {data.patients.map(patient => (
                       <tr key={patient.id}>
                         <td>{patient.id}</td>
-                        <td>{patient.name || "Inconnu"}</td>
-                        <td>{patient.email || "Inconnu"}</td>
+                        <td>{patient.user?.name || "Inconnu"}</td>
+                        <td>{patient.user?.email || "Inconnu"}</td>
+                        <td>{new Date(patient.dateNaissance).toLocaleDateString('fr-FR')}</td>
+                        <td>{patient.antecedents || "—"}</td>
                         <td>
                           <button className="btn-secondary">
                             Voir détails
@@ -535,70 +580,81 @@ export default function ReceptionDashboard() {
         </div>
       </main>
 
-      {/* Modal Nouveau Rendez-vous */}
-      {showRendezVousModal && (
+      {/* Modal Nouveau Patient */}
+      {showPatientModal && (
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h2>📅 Nouveau Rendez-vous</h2>
+              <h2>👤 Nouveau Patient</h2>
               <button 
                 className="modal-close"
-                onClick={() => setShowRendezVousModal(false)}
+                onClick={() => {
+                  setShowPatientModal(false);
+                  setPatientFormData({
+                    name: "",
+                    email: "",
+                    password: "",
+                    dateNaissance: "",
+                    antecedents: ""
+                  });
+                }}
               >
                 ×
               </button>
             </div>
-            <form onSubmit={handleCreateRendezVous} className="reception-form">
-              <div className="form-group reception-form-full">
-                <label>Date et heure</label>
+            <form onSubmit={handleCreatePatient} className="reception-form">
+              <div className="form-group">
+                <label>Nom complet *</label>
                 <input
-                  type="datetime-local"
-                  value={formData.rdvDate}
-                  onChange={(e) => setFormData({...formData, rdvDate: e.target.value})}
+                  type="text"
+                  value={patientFormData.name}
+                  onChange={(e) => setPatientFormData({...patientFormData, name: e.target.value})}
+                  placeholder="Ex: Jean Dupont"
                   required
                 />
               </div>
               
               <div className="form-group">
-                <label>Patient</label>
-                <select
-                  value={formData.rdvPatientId}
-                  onChange={(e) => setFormData({...formData, rdvPatientId: e.target.value})}
+                <label>Email *</label>
+                <input
+                  type="email"
+                  value={patientFormData.email}
+                  onChange={(e) => setPatientFormData({...patientFormData, email: e.target.value})}
+                  placeholder="Ex: jean.dupont@example.com"
                   required
-                >
-                  <option value="">Sélectionner un patient</option>
-                  {data.patients.map(patient => (
-                    <option key={patient.id} value={patient.id}>
-                     {patient.name || `Patient ${patient.id}`}
-                    </option>
-                ))}
-                </select>
+                />
               </div>
               
               <div className="form-group">
-                <label>Médecin</label>
-                <select
-                  value={formData.rdvMedecinId}
-                  onChange={(e) => setFormData({...formData, rdvMedecinId: e.target.value})}
+                <label>Mot de passe *</label>
+                <input
+                  type="password"
+                  value={patientFormData.password}
+                  onChange={(e) => setPatientFormData({...patientFormData, password: e.target.value})}
+                  placeholder="Minimum 6 caractères"
                   required
-                >
-                  <option value="">Sélectionner un médecin</option>
-                  {data.medecins.map(medecin => (
-                    <option key={medecin.id} value={medecin.id}>
-                      {medecin.user?.name || `Dr. ${medecin.id}`}
-                    </option>
-                  ))}
-                </select>
+                  minLength={6}
+                />
+              </div>
+              
+              <div className="form-group">
+                <label>Date de naissance *</label>
+                <input
+                  type="date"
+                  value={patientFormData.dateNaissance}
+                  onChange={(e) => setPatientFormData({...patientFormData, dateNaissance: e.target.value})}
+                  required
+                  max={new Date().toISOString().split('T')[0]}
+                />
               </div>
               
               <div className="form-group reception-form-full">
-                <label>Motif</label>
-                <input
-                  type="text"
-                  value={formData.rdvMotif}
-                  onChange={(e) => setFormData({...formData, rdvMotif: e.target.value})}
-                  placeholder="Ex: Consultation générale"
-                  required
+                <label>Antécédents médicaux (optionnel)</label>
+                <textarea
+                  value={patientFormData.antecedents}
+                  onChange={(e) => setPatientFormData({...patientFormData, antecedents: e.target.value})}
+                  placeholder="Ex: Diabète, hypertension, allergies..."
+                  rows="4"
                 />
               </div>
               
@@ -606,12 +662,21 @@ export default function ReceptionDashboard() {
                 <button 
                   type="button" 
                   className="btn-danger"
-                  onClick={() => setShowRendezVousModal(false)}
+                  onClick={() => {
+                    setShowPatientModal(false);
+                    setPatientFormData({
+                      name: "",
+                      email: "",
+                      password: "",
+                      dateNaissance: "",
+                      antecedents: ""
+                    });
+                  }}
                 >
                   Annuler
                 </button>
                 <button type="submit" className="btn-primary">
-                  Créer le RDV
+                  Créer le patient
                 </button>
               </div>
             </form>

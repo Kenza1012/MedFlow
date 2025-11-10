@@ -14,4 +14,16 @@ export class UserController {
   async getAll() {
     return this.userService.getAll();
   }
+
+  // 🔹 Obtenir tous les patients
+  @Get('patients')
+  async getPatients() {
+    return this.userService.getPatients();
+  }
+
+  // 🔹 Obtenir tous les médecins
+  @Get('medecins')
+  async getMedecins() {
+    return this.userService.getMedecins();
+  }
 }

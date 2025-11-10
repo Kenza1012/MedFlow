@@ -1,11 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
+import Register from "./pages/auth/register";
 import Home from "./pages/Home"; // Nouvelle page Home
 import MedecinDashboard from "./pages/medecin/MedecinDashboard";
 import PatientDashboard from "./pages/patient/patientDashboard";
+import Layout from "./components/Layout"; // notre Layout avec Header/Footer
 import ReceptionDashboard from "./pages/receptionniste/ReceptionDashboard";
-import Layout from "./components/Layout"; // Layout commun avec header/footer
 
 function App() {
   return (
@@ -37,11 +37,11 @@ function App() {
           path="/reception/dashboard"
           element={
             <Layout>
-              <ReceptionDashboard />
+              <ReceptionDashboard />    
             </Layout>
           }
         />
-        {/* Ici tu peux ajouter d'autres dashboards ou pages spécifiques */}
+        {/* Ajoute ici les autres dashboards */}
       </Routes>
     </Router>
   );
