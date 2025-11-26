@@ -1,4 +1,4 @@
-// src/pages/patient/PatientDashboard.jsx
+// src/pages/patient/patientDashboard.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -22,7 +22,7 @@ export default function PatientDashboard() {
   const [motif, setMotif] = useState("");
   const [editRdvId, setEditRdvId] = useState(null);
   const [editData, setEditData] = useState({ date: "", motif: "" });
-  const [activeTab, setActiveTab] = useState("rendezvous");
+  const [activeTab, setActiveTab] = useState("informations");
   const [loading, setLoading] = useState(true);
   const [refreshKey, setRefreshKey] = useState(0);
 
@@ -33,6 +33,7 @@ export default function PatientDashboard() {
     const stored = localStorage.getItem("user");
     const parsed = stored ? JSON.parse(stored) : null;
     const id = parsed?.id || parsed?.userId || null;
+    console.log("👤 User récupéré:", { parsed, id });
     return { user: parsed, userId: id };
   }, []);
 
@@ -42,31 +43,44 @@ export default function PatientDashboard() {
     navigate("/");
   };
 
-  /** 🔹 Charger les données patient */
+  /** 🔹 Charger les données */
   useEffect(() => {
-    if (!userId) return;
+    if (!userId) {
+      console.warn("⚠️ userId manquant");
+      setLoading(false);
+      return;
+    }
 
     const loadData = async () => {
       setLoading(true);
       try {
-        const [info, med] = await Promise.all([
-          fetchPatientInfo(userId),
-          fetchMedecinsDisponibles(),
-        ]);
+        console.log("📍 Chargement données pour userId:", userId);
 
+        // 1️⃣ Récupérer les infos du patient par userId
+        const info = await fetchPatientInfo(userId);
+        console.log("✅ Info patient:", info);
         setPatientInfo(info);
-        setMedecins(med);
 
+        // 2️⃣ Récupérer les médecins disponibles
+        const medecinsData = await fetchMedecinsDisponibles();
+        console.log("✅ Médecins reçus:", medecinsData);
+        setMedecins(medecinsData || []);
+
+        // 3️⃣ Utiliser l'ID du patient pour les RDV et factures
         if (info?.id) {
           const [rdv, fact] = await Promise.all([
             fetchRendezVous(info.id),
             fetchFactures(info.id),
           ]);
-          setRendezVous(rdv);
-          setFactures(fact);
+
+          console.log("✅ Rendez-vous reçus:", rdv);
+          console.log("✅ Factures reçues:", fact);
+
+          setRendezVous(rdv || []);
+          setFactures(fact || []);
         }
       } catch (err) {
-        console.error("Erreur chargement:", err);
+        console.error("❌ Erreur chargement:", err);
       } finally {
         setLoading(false);
       }
@@ -80,7 +94,7 @@ export default function PatientDashboard() {
     e.preventDefault();
 
     if (!selectedMedecin || !selectedDate || !motif) {
-      alert("Veuillez remplir tous les champs.");
+      alert("❌ Veuillez remplir tous les champs.");
       return;
     }
 
@@ -92,28 +106,31 @@ export default function PatientDashboard() {
         motif: motif.trim(),
       };
 
+      console.log("📤 Réservation RDV:", data);
       await reserverRendezVous(data);
+
       alert("✅ Rendez-vous réservé avec succès !");
       setSelectedMedecin("");
       setSelectedDate("");
       setMotif("");
       setRefreshKey((k) => k + 1);
     } catch (err) {
-      console.error("Erreur réservation:", err);
+      console.error("❌ Erreur réservation:", err);
       alert(err.response?.data?.message || "Erreur lors de la réservation.");
     }
   };
 
   /** ❌ Annuler rendez-vous */
   const handleCancelRendezVous = async (id) => {
-    if (!window.confirm("Voulez-vous vraiment annuler ce rendez-vous ?")) return;
+    if (!window.confirm("Voulez-vous vraiment annuler ce rendez-vous ?"))
+      return;
 
     try {
       await annulerRendezVous(id);
       alert("✅ Rendez-vous annulé !");
       setRefreshKey((k) => k + 1);
     } catch (error) {
-      console.error(error);
+      console.error("❌ Erreur annulation:", error);
       alert("Erreur lors de l'annulation du rendez-vous.");
     }
   };
@@ -121,7 +138,7 @@ export default function PatientDashboard() {
   /** ✏️ Modifier rendez-vous */
   const handleEditRendezVous = async (id) => {
     if (!editData.date || !editData.motif) {
-      alert("Veuillez remplir les champs de modification.");
+      alert("❌ Veuillez remplir les champs de modification.");
       return;
     }
 
@@ -134,12 +151,10 @@ export default function PatientDashboard() {
       setEditRdvId(null);
       setRefreshKey((k) => k + 1);
     } catch (error) {
-      console.error(error);
+      console.error("❌ Erreur modification:", error);
       alert("Erreur lors de la modification.");
     }
   };
-
-  if (loading) return <div className="loading">⏳ Chargement...</div>;
 
   return (
     <div className="dashboard-container">
@@ -150,19 +165,19 @@ export default function PatientDashboard() {
           onClick={() => setActiveTab("informations")}
           className={activeTab === "informations" ? "active" : ""}
         >
-          Informations
+          👤 Informations
         </button>
         <button
           onClick={() => setActiveTab("rendezvous")}
           className={activeTab === "rendezvous" ? "active" : ""}
         >
-          Rendez-vous
+          📅 Rendez-vous
         </button>
         <button
           onClick={() => setActiveTab("factures")}
           className={activeTab === "factures" ? "active" : ""}
         >
-          Factures
+          💳 Factures
         </button>
         <button onClick={handleLogout} className="logout-btn">
           🚪 Déconnexion
@@ -174,7 +189,7 @@ export default function PatientDashboard() {
         <header className="dashboard-header">
           <h1>📋 Tableau de bord Patient</h1>
           <div className="header-actions">
-            <span className="patient-name">{user?.name}</span>
+            <span className="patient-name">{user?.name || "Utilisateur"}</span>
             <img
               src="https://cdn-icons-png.flaticon.com/512/219/219970.png"
               alt="avatar"
@@ -184,7 +199,54 @@ export default function PatientDashboard() {
         </header>
 
         <div className="dashboard-content">
-          {/* === RDV === */}
+          {/* === INFORMATIONS === */}
+          {activeTab === "informations" && patientInfo && (
+            <section className="card">
+              <h2>👤 Mes Informations Personnelles</h2>
+
+              {/*<div className="info-grid">*/}
+                <div className="form-group row">
+                  <label>Nom complet</label>
+                  <input
+                    type="text"
+                    value={patientInfo.user?.name || ""}
+                    disabled
+                  />
+                </div>
+
+                <div className="form-group row">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    value={patientInfo.user?.email || ""}
+                    disabled
+                  />
+                </div>
+
+                <div className="form-group row">
+                  <label>Date de naissance</label>
+                  <input
+                    type="date"
+                    value={new Date(patientInfo.dateNaissance).toISOString().split("T")[0]}
+                    disabled
+                  />
+                </div>
+
+              
+              {/*</div>*/}
+
+              <div className="form-group full-width">
+                <label>Antécédents médicaux</label>
+                <textarea
+                  value={patientInfo.antecedents || "Aucun"}
+                  disabled
+                  rows="5"
+                />
+              </div>
+            </section>
+          )}
+
+          {/* === RENDEZ-VOUS === */}
           {activeTab === "rendezvous" && (
             <section className="card">
               <h2>📅 Mes Rendez-vous</h2>
@@ -199,7 +261,7 @@ export default function PatientDashboard() {
                   <option value="">-- Sélectionnez un médecin --</option>
                   {medecins.map((m) => (
                     <option key={m.id} value={m.id}>
-                      {m.user?.name || "Médecin"} ({m.specialite})
+                      Dr. {m.user?.name || "Médecin"} ({m.specialite || "Généraliste"})
                     </option>
                   ))}
                 </select>
@@ -222,7 +284,7 @@ export default function PatientDashboard() {
               </form>
 
               {/* Liste des RDV */}
-              <h3 style={{ marginTop: "30px" }}>Mes rendez-vous</h3>
+              <h3 className="section-title">Mes rendez-vous ({rendezVous.length})</h3>
               {rendezVous.length > 0 ? (
                 <table className="table">
                   <thead>
@@ -239,10 +301,10 @@ export default function PatientDashboard() {
                     {rendezVous.map((rdv) => (
                       <React.Fragment key={rdv.id}>
                         <tr>
-                          <td>{new Date(rdv.date).toLocaleString()}</td>
+                          <td>{new Date(rdv.date).toLocaleString("fr-FR")}</td>
                           <td>{rdv.motif}</td>
-                          <td>{rdv.medecin?.user?.name}</td>
-                          <td>{rdv.medecin?.specialite}</td>
+                          <td>Dr. {rdv.medecin?.user?.name || "Inconnu"}</td>
+                          <td>{rdv.medecin?.specialite || "?"}</td>
                           <td>
                             <span
                               className={`rdv-status ${rdv.status
@@ -252,7 +314,7 @@ export default function PatientDashboard() {
                               {rdv.status}
                             </span>
                           </td>
-                          <td style={{ display: "flex", gap: "8px" }}>
+                          <td className="actions-cell">
                             <button
                               className="btn-secondary"
                               disabled={rdv.status === "Annulé"}
@@ -311,7 +373,7 @@ export default function PatientDashboard() {
                                   }
                                 />
 
-                                <div style={{ marginTop: "10px" }}>
+                                <div className="edit-actions">
                                   <button
                                     type="submit"
                                     className="btn-primary"
@@ -323,7 +385,7 @@ export default function PatientDashboard() {
                                     className="btn-danger"
                                     onClick={() => setEditRdvId(null)}
                                   >
-                                    Annuler
+                                    ✖️ Annuler
                                   </button>
                                 </div>
                               </form>
@@ -335,7 +397,53 @@ export default function PatientDashboard() {
                   </tbody>
                 </table>
               ) : (
-                <p>Aucun rendez-vous.</p>
+                <p className="empty-message">Aucun rendez-vous programmé</p>
+              )}
+            </section>
+          )}
+
+          {/* === FACTURES === */}
+          {activeTab === "factures" && (
+            <section className="card">
+              <h2>💳 Mes Factures ({factures.length})</h2>
+
+              {factures.length > 0 ? (
+                <table className="table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Consultation</th>
+                      <th>Montant</th>
+                      <th>Statut</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {factures.map((facture) => (
+                      <tr key={facture.id}>
+                        <td>
+                          {new Date(facture.date).toLocaleDateString("fr-FR")}
+                        </td>
+                        <td>
+                          {facture.consultation?.diagnostic || "Consultation"}
+                        </td>
+                        <td className="amount">
+                          {facture.montant} €
+                        </td>
+                        <td>
+                          <span
+                            className={`statut ${facture.statut
+                              ?.toLowerCase()
+                              .replace(" ", "-")}`}
+                          >
+                            {facture.statut}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="empty-message">Aucune facture</p>
               )}
             </section>
           )}

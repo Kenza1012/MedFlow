@@ -1,35 +1,49 @@
-// src/services/patient.js
+// frontend/src/services/patient.js
+
 import api from "./api";
-const BASE_URL = "http://localhost:3000";
 
 const getToken = () => localStorage.getItem("token") || localStorage.getItem("access_token");
-
-const getAuthHeaders = () => ({
-  headers: { Authorization: `Bearer ${getToken()}` },
-});
 
 /**
  * 🧑‍⚕️ Récupérer les informations d'un patient par userId
  */
-export async function fetchPatientInfo(user) {
+export async function fetchPatientInfo(userId) {
   try {
-    const userId = typeof user === "object" ? user.id : user;
-    const res = await api.get(`${BASE_URL}/patients/user/${userId}`, getAuthHeaders());
-    return res.data;
+    // ✅ CORRECTION: Passer userId directement (nombre)
+    const id = typeof userId === "object" ? userId.id : userId;
+    
+    if (!id) {
+      throw new Error("userId manquant");
+    }
+
+    // ✅ Utiliser api.get avec la bonne syntaxe
+    const response = await api.get(`/patients/user/${id}`);
+    console.log("✅ Patient info reçue:", response.data);
+    return response.data;
   } catch (error) {
-    console.error("❌ Erreur fetchPatientInfo:", error.response?.data || error.message);
-    return null;
+    console.error("❌ Erreur fetchPatientInfo:", {
+      status: error.response?.status,
+      message: error.response?.data?.message || error.message,
+      userId
+    });
+    throw error;
   }
 }
 
 /**
- * 📅 Récupérer la liste des rendez-vous du patient
+ * 📅 Récupérer les rendez-vous du patient
  */
-export async function fetchRendezVous(user) {
+export async function fetchRendezVous(patientId) {
   try {
-    const userId = typeof user === "object" ? user.id : user;
-    const res = await api.get(`${BASE_URL}/patients/${userId}/rendezvous`, getAuthHeaders());
-    return res.data;
+    const id = typeof patientId === "object" ? patientId.id : patientId;
+    
+    if (!id) {
+      throw new Error("patientId manquant");
+    }
+
+    const response = await api.get(`/patients/${id}/rendezvous`);
+    console.log("✅ Rendez-vous reçus:", response.data);
+    return response.data;
   } catch (error) {
     console.error("❌ Erreur fetchRendezVous:", error.response?.data || error.message);
     return [];
@@ -37,13 +51,19 @@ export async function fetchRendezVous(user) {
 }
 
 /**
- * 💳 Récupérer la liste des factures du patient
+ * 💳 Récupérer les factures du patient
  */
-export async function fetchFactures(user) {
+export async function fetchFactures(patientId) {
   try {
-    const userId = typeof user === "object" ? user.id : user;
-    const res = await api.get(`${BASE_URL}/patients/${userId}/factures`, getAuthHeaders());
-    return res.data;
+    const id = typeof patientId === "object" ? patientId.id : patientId;
+    
+    if (!id) {
+      throw new Error("patientId manquant");
+    }
+
+    const response = await api.get(`/patients/${id}/factures`);
+    console.log("✅ Factures reçues:", response.data);
+    return response.data;
   } catch (error) {
     console.error("❌ Erreur fetchFactures:", error.response?.data || error.message);
     return [];
@@ -55,14 +75,12 @@ export async function fetchFactures(user) {
  */
 export async function fetchMedecinsDisponibles() {
   try {
-    const token = getToken();
-    const response = await api.get(`${BASE_URL}/medecin`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const response = await api.get(`/medecin`);
+    console.log("✅ Médecins reçus:", response.data);
     return response.data;
   } catch (error) {
     console.error("❌ Erreur fetchMedecinsDisponibles:", error.response?.data || error.message);
-    throw error;
+    return [];
   }
 }
 
@@ -71,27 +89,26 @@ export async function fetchMedecinsDisponibles() {
  */
 export async function reserverRendezVous(data) {
   try {
-    const res = await api.post(`${BASE_URL}/rendezvous`, data, getAuthHeaders());
-    return res.data;
+    console.log("📤 Réservation RDV:", data);
+    const response = await api.post(`/rendezvous`, data);
+    console.log("✅ RDV réservé:", response.data);
+    return response.data;
   } catch (error) {
-    console.error("❌ Erreur reserverRendezVous:", error.response?.data || error.message);
+    console.error("❌ Erreur reservation:", error.response?.data || error.message);
     throw error;
   }
 }
+
 /**
  * ❌ Annuler un rendez-vous
  */
 export async function annulerRendezVous(rdvId) {
   try {
-    const res = await api.patch(
-      `http://localhost:3000/rendezvous/${rdvId}/annuler`,
-      {}, // corps vide
-      getAuthHeaders()
-    );
-    console.log("✅ Rendez-vous annulé:", res.data);
-    return res.data;
+    const response = await api.patch(`/rendezvous/${rdvId}/annuler`, {});
+    console.log("✅ RDV annulé:", response.data);
+    return response.data;
   } catch (error) {
-    console.error("❌ Erreur annulation rendez-vous:", error.response?.data || error.message);
+    console.error("❌ Erreur annulation:", error.response?.data || error.message);
     throw error;
   }
 }
@@ -101,17 +118,11 @@ export async function annulerRendezVous(rdvId) {
  */
 export async function modifierRendezVous(rdvId, data) {
   try {
-    const res = await api.patch(
-      `http://localhost:3000/rendezvous/${rdvId}`,
-      data,
-      getAuthHeaders()
-    );
-    console.log("✅ Rendez-vous modifié:", res.data);
-    return res.data;
+    const response = await api.patch(`/rendezvous/${rdvId}`, data);
+    console.log("✅ RDV modifié:", response.data);
+    return response.data;
   } catch (error) {
-    console.error("❌ Erreur modification rendez-vous:", error.response?.data || error.message);
+    console.error("❌ Erreur modification:", error.response?.data || error.message);
     throw error;
   }
 }
-
-
