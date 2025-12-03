@@ -11,6 +11,7 @@ import { MedecinModule } from './medecin/medecin.module';
 import { RendezvousModule } from './rendezvous/rendezvous.module';
 import { ReceptionnisteModule } from './receptionniste/receptionniste.module';
 import { AdminModule } from './admin/admin.module';
+import { PaiementModule } from './paiement/paiement.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AdminModule } from './admin/admin.module';
     RendezvousModule,
     ReceptionnisteModule,
     AdminModule,
+    PaiementModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, AuthService],

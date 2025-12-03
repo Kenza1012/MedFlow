@@ -9,6 +9,8 @@ import ReceptionDashboard from "./pages/receptionniste/ReceptionDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import RendezVousForm from "./pages/receptionniste/RendezVousForm";
 import Layout from "./components/Layout";
+import PaymentSuccess from "./pages/patient/PaymentSuccess";
+
 
 function App() {
   return (
@@ -36,6 +38,7 @@ function App() {
             </Layout>
           }
         />
+       
         <Route
           path="/reception/dashboard"
           element={
@@ -53,8 +56,22 @@ function App() {
           }
           // Route pour le dashboard Admin
         />
+        // Dans ta configuration de routes :
+        <Route path="/patient/payment-success" 
+        element={
+        <PaymentSuccess />
+        } 
+        />
         <Route
           path="/reception/rendezvous"
+          element={
+            <Layout>
+              <RendezVousForm />
+            </Layout>
+          }
+        />
+         <Route
+          path="/reception/rendezvous/new"
           element={
             <Layout>
               <RendezVousForm />

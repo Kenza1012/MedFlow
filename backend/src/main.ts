@@ -12,6 +12,8 @@ async function bootstrap() {
     origin: 'http://localhost:5173', // URL de ton front React
     credentials: true,
   });
+// Middleware pour les routes Stripe (doit être AVANT les autres parsers)
+  app.use('/webhook/stripe', bodyParser.raw({ type: 'application/json' }));
 
     // ✅ Permet à Nest de lire le JSON envoyé dans les requêtes
   app.use(bodyParser.json({ limit: '10mb' }));

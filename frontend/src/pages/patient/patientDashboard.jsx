@@ -28,13 +28,14 @@ export default function PatientDashboard() {
 
   const navigate = useNavigate();
 
-  /** 🔹 Utilisateur connecté */
-  const { user, userId } = useMemo(() => {
+  /** 🔹 Utilisateur connecté et token */
+  const { user, userId, token } = useMemo(() => {
     const stored = localStorage.getItem("user");
     const parsed = stored ? JSON.parse(stored) : null;
     const id = parsed?.id || parsed?.userId || null;
-    console.log("👤 User récupéré:", { parsed, id });
-    return { user: parsed, userId: id };
+    const authToken = localStorage.getItem("token") || "";
+    console.log("👤 User récupéré:", { parsed, id, token: authToken });
+    return { user: parsed, userId: id, token: authToken };
   }, []);
 
   /** 🔹 Déconnexion */
@@ -156,6 +157,46 @@ export default function PatientDashboard() {
     }
   };
 
+  /** 💳 Gérer le paiement Stripe */
+  const handlePayNow = async (factureId) => {
+    if (!token) {
+      alert("❌ Vous n'êtes pas authentifié");
+      return;
+    }
+
+    try {
+      console.log("💳 Initiation paiement pour facture:", factureId);
+      
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/paiement/checkout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ factureId }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Erreur HTTP: ${res.status}`);
+      }
+
+      const { sessionId, url } = await res.json();
+      console.log("✅ Session créée:", sessionId);
+      
+      // 🔗 Redirection directe vers l'URL Stripe (nouvelle API)
+      if (url) {
+        window.location.href = url;
+      } else {
+        throw new Error("URL de paiement non reçue");
+      }
+    } catch (err) {
+      console.error("❌ Erreur paiement:", err);
+      alert(err.message || "Erreur lors du paiement");
+    }
+  };
+
+
+
   return (
     <div className="dashboard-container">
       {/* === SIDEBAR === */}
@@ -204,36 +245,32 @@ export default function PatientDashboard() {
             <section className="card">
               <h2>👤 Mes Informations Personnelles</h2>
 
-              {/*<div className="info-grid">*/}
-                <div className="form-group row">
-                  <label>Nom complet</label>
-                  <input
-                    type="text"
-                    value={patientInfo.user?.name || ""}
-                    disabled
-                  />
-                </div>
+              <div className="form-group row">
+                <label>Nom complet</label>
+                <input
+                  type="text"
+                  value={patientInfo.user?.name || ""}
+                  disabled
+                />
+              </div>
 
-                <div className="form-group row">
-                  <label>Email</label>
-                  <input
-                    type="email"
-                    value={patientInfo.user?.email || ""}
-                    disabled
-                  />
-                </div>
+              <div className="form-group row">
+                <label>Email</label>
+                <input
+                  type="email"
+                  value={patientInfo.user?.email || ""}
+                  disabled
+                />
+              </div>
 
-                <div className="form-group row">
-                  <label>Date de naissance</label>
-                  <input
-                    type="date"
-                    value={new Date(patientInfo.dateNaissance).toISOString().split("T")[0]}
-                    disabled
-                  />
-                </div>
-
-              
-              {/*</div>*/}
+              <div className="form-group row">
+                <label>Date de naissance</label>
+                <input
+                  type="date"
+                  value={new Date(patientInfo.dateNaissance).toISOString().split("T")[0]}
+                  disabled
+                />
+              </div>
 
               <div className="form-group full-width">
                 <label>Antécédents médicaux</label>
@@ -415,6 +452,7 @@ export default function PatientDashboard() {
                       <th>Consultation</th>
                       <th>Montant</th>
                       <th>Statut</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -437,6 +475,20 @@ export default function PatientDashboard() {
                           >
                             {facture.statut}
                           </span>
+                        </td>
+                        <td>
+                          {facture.statut && 
+                           facture.statut.toLowerCase() !== "payée" && (
+                            <button
+                              className="btn-primary"
+                              onClick={() => handlePayNow(facture.id)}
+                            >
+                               Payer maintenant
+                            </button>
+                          )}
+                          {facture.statut === "Payée" && (
+                            <span className="paid-badge">✅ Payée</span>
+                          )}
                         </td>
                       </tr>
                     ))}
