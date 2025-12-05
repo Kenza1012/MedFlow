@@ -10,7 +10,7 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import RendezVousForm from "./pages/receptionniste/RendezVousForm";
 import Layout from "./components/Layout";
 import PaymentSuccess from "./pages/patient/PaymentSuccess";
-
+import './styles/global.css'; // Importation des styles globaux
 
 function App() {
   return (

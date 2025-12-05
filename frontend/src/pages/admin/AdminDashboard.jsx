@@ -2,8 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { adminService } from "../../services/admin";
-import "./AdminDashboard.css";
-
+import '../../styles/global.css';
 export default function AdminDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -30,13 +29,11 @@ export default function AdminDashboard() {
     password: "",
   });
 
-  // Informations admin
   const adminInfo = {
     name: JSON.parse(localStorage.getItem("user") || "{}")?.name || "Admin",
     email: JSON.parse(localStorage.getItem("user") || "{}")?.email || "admin@medflow.com",
   };
 
-  // Charger les données du dashboard
   const loadDashboardData = async () => {
     setLoading(true);
     try {
@@ -66,7 +63,6 @@ export default function AdminDashboard() {
     navigate("/");
   };
 
-  // Créer un médecin
   const handleCreateMedecin = async (e) => {
     e.preventDefault();
     
@@ -87,7 +83,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Créer un réceptionniste
   const handleCreateReceptionniste = async (e) => {
     e.preventDefault();
     
@@ -108,7 +103,6 @@ export default function AdminDashboard() {
     }
   };
 
-  // Supprimer un membre du personnel
   const handleDeleteStaff = async (userId, name) => {
     if (window.confirm(`Êtes-vous sûr de vouloir supprimer ${name} ?`)) {
       try {
@@ -124,7 +118,7 @@ export default function AdminDashboard() {
 
   if (loading && !stats) {
     return (
-      <div className="loading-container">
+      <div className="loading">
         <div className="spinner"></div>
         <p>Chargement des données...</p>
       </div>
@@ -132,9 +126,9 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="admin-dashboard">
+    <div className="dashboard-container">
       {/* Sidebar */}
-      <aside className="admin-sidebar">
+      <aside className="sidebar gradient-admin">
         <h2>👨‍💼 Admin</h2>
         <button
           className={activeTab === "dashboard" ? "active" : ""}
@@ -166,15 +160,16 @@ export default function AdminDashboard() {
       </aside>
 
       {/* Main Content */}
-      <main className="admin-main">
+      <main className="dashboard-main">
         {/* Header */}
-        <header className="admin-header">
-          <div className="admin-header-left">
+        <header className="dashboard-header">
+          <div>
             <h1>🏥 MedFlow - Administration</h1>
-            <p className="admin-subtitle">Tableau de bord administrateur</p>
+            <p style={{ fontSize: '0.9rem', color: 'var(--text-light)', marginTop: '5px' }}>
+              Tableau de bord administrateur
+            </p>
           </div>
-          <div className="admin-header-actions">
-            <button className="notif-btn">🔔</button>
+          <div className="header-actions">
             <span className="admin-name">{adminInfo.name}</span>
             <img
               src="https://cdn-icons-png.flaticon.com/512/4339/4339520.png"
@@ -185,32 +180,32 @@ export default function AdminDashboard() {
         </header>
 
         {/* Content */}
-        <div className="admin-content">
+        <div className="dashboard-content">
           {/* DASHBOARD */}
           {activeTab === "dashboard" && stats && (
             <>
               {/* Period Selector */}
-              <div className="period-selector">
+              <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
                 <button
-                  className={period === "day" ? "active" : ""}
+                  className={period === "day" ? "btn-primary" : "btn-secondary"}
                   onClick={() => setPeriod("day")}
                 >
                   Jour
                 </button>
                 <button
-                  className={period === "week" ? "active" : ""}
+                  className={period === "week" ? "btn-primary" : "btn-secondary"}
                   onClick={() => setPeriod("week")}
                 >
                   Semaine
                 </button>
                 <button
-                  className={period === "month" ? "active" : ""}
+                  className={period === "month" ? "btn-primary" : "btn-secondary"}
                   onClick={() => setPeriod("month")}
                 >
                   Mois
                 </button>
                 <button
-                  className={period === "year" ? "active" : ""}
+                  className={period === "year" ? "btn-primary" : "btn-secondary"}
                   onClick={() => setPeriod("year")}
                 >
                   Année
@@ -218,63 +213,72 @@ export default function AdminDashboard() {
               </div>
 
               {/* Stats Cards */}
-              <div className="stats-grid">
-                <div className="stat-card blue">
-                  <div className="stat-icon">👥</div>
-                  <div className="stat-content">
-                    <h3>{stats.staff.total}</h3>
-                    <p>Total Personnel</p>
-                    <small>{stats.staff.medecins} médecins • {stats.staff.receptionnistes} réceptionnistes</small>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                <div className="stat-card" style={{ '--color-start': '#3b82f6', '--color-end': '#2563eb' }}>
+                  <div style={{ fontSize: '2.5rem' }}>👥</div>
+                  <div>
+                    <div className="stat-number">{stats.staff.total}</div>
+                    <div className="stat-label">Total Personnel</div>
+                    <small style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                      {stats.staff.medecins} médecins • {stats.staff.receptionnistes} réceptionnistes
+                    </small>
                   </div>
                 </div>
 
-                <div className="stat-card green">
-                  <div className="stat-icon">🏥</div>
-                  <div className="stat-content">
-                    <h3>{stats.staff.patients}</h3>
-                    <p>Patients</p>
-                    <small>Total enregistrés</small>
+                <div className="stat-card" style={{ '--color-start': '#10b981', '--color-end': '#059669' }}>
+                  <div style={{ fontSize: '2.5rem' }}>🏥</div>
+                  <div>
+                    <div className="stat-number">{stats.staff.patients}</div>
+                    <div className="stat-label">Patients</div>
+                    <small style={{ fontSize: '0.85rem', opacity: 0.9 }}>Total enregistrés</small>
                   </div>
                 </div>
 
-                <div className="stat-card purple">
-                  <div className="stat-icon">💰</div>
-                  <div className="stat-content">
-                    <h3>{stats.finance.chiffreAffaires} DT</h3>
-                    <p>Chiffre d'Affaires</p>
-                    <small>{stats.finance.facturesPayees}/{stats.finance.totalFactures} factures payées</small>
+                <div className="stat-card" style={{ '--color-start': '#8b5cf6', '--color-end': '#7c3aed' }}>
+                  <div style={{ fontSize: '2.5rem' }}>💰</div>
+                  <div>
+                    <div className="stat-number">{stats.finance.chiffreAffaires} DT</div>
+                    <div className="stat-label">Chiffre d'Affaires</div>
+                    <small style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                      {stats.finance.facturesPayees}/{stats.finance.totalFactures} factures payées
+                    </small>
                   </div>
                 </div>
 
-                <div className="stat-card orange">
-                  <div className="stat-icon">📅</div>
-                  <div className="stat-content">
-                    <h3>{stats.activite.totalRendezVous}</h3>
-                    <p>Rendez-vous</p>
-                    <small>{stats.activite.rendezVousAujourdhui} aujourd'hui</small>
+                <div className="stat-card" style={{ '--color-start': '#f59e0b', '--color-end': '#d97706' }}>
+                  <div style={{ fontSize: '2.5rem' }}>📅</div>
+                  <div>
+                    <div className="stat-number">{stats.activite.totalRendezVous}</div>
+                    <div className="stat-label">Rendez-vous</div>
+                    <small style={{ fontSize: '0.85rem', opacity: 0.9 }}>
+                      {stats.activite.rendezVousAujourdhui} aujourd'hui
+                    </small>
                   </div>
                 </div>
               </div>
 
               {/* Charts */}
               {revenueStats && (
-                <div className="admin-card">
+                <div className="card">
                   <h2>📈 Revenus mensuels ({revenueStats.year})</h2>
-                  <div className="revenue-chart">
+                  <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-end', height: '250px', padding: '20px', background: '#f9fafb', borderRadius: 'var(--radius-md)', marginTop: '20px' }}>
                     {revenueStats.monthlyRevenue.map((month, idx) => (
-                      <div key={idx} className="chart-bar">
+                      <div key={idx} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
                         <div
-                          className="bar"
                           style={{
+                            width: '100%',
                             height: `${(month.revenue / Math.max(...revenueStats.monthlyRevenue.map(m => m.revenue))) * 200}px`,
+                            background: 'linear-gradient(180deg, var(--primary), #0097a7)',
+                            borderRadius: '4px 4px 0 0',
+                            transition: 'all 0.3s ease'
                           }}
                           title={`${month.revenue} DT`}
                         ></div>
-                        <span className="bar-label">{month.month}</span>
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-light)' }}>{month.month}</span>
                       </div>
                     ))}
                   </div>
-                  <div className="chart-summary">
+                  <div style={{ display: 'flex', justifyContent: 'space-around', padding: '20px', background: '#f9fafb', borderRadius: 'var(--radius-md)', marginTop: '15px' }}>
                     <p><strong>Total:</strong> {revenueStats.totalRevenue.toFixed(2)} DT</p>
                     <p><strong>Factures:</strong> {revenueStats.totalFactures}</p>
                   </div>
@@ -282,20 +286,26 @@ export default function AdminDashboard() {
               )}
 
               {/* Activity Summary */}
-              <div className="activity-grid">
-                <div className="admin-card">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
+                <div className="card">
                   <h3>📋 Consultations</h3>
-                  <div className="big-number">{stats.activite.totalConsultations}</div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--primary)', margin: '10px 0' }}>
+                    {stats.activite.totalConsultations}
+                  </div>
                   <p>Total sur la période</p>
                 </div>
-                <div className="admin-card">
+                <div className="card">
                   <h3>💳 Taux de paiement</h3>
-                  <div className="big-number">{stats.finance.tauxPaiement}%</div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--primary)', margin: '10px 0' }}>
+                    {stats.finance.tauxPaiement}%
+                  </div>
                   <p>Factures payées</p>
                 </div>
-                <div className="admin-card">
+                <div className="card">
                   <h3>⚠️ Impayés</h3>
-                  <div className="big-number">{stats.finance.facturesImpayees}</div>
+                  <div style={{ fontSize: '2.5rem', fontWeight: '700', color: '#ef4444', margin: '10px 0' }}>
+                    {stats.finance.facturesImpayees}
+                  </div>
                   <p>Factures en attente</p>
                 </div>
               </div>
@@ -305,9 +315,9 @@ export default function AdminDashboard() {
           {/* PERSONNEL */}
           {activeTab === "staff" && (
             <>
-              <div className="staff-header">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                 <h2>👥 Gestion du Personnel</h2>
-                <div className="staff-actions">
+                <div style={{ display: 'flex', gap: '10px' }}>
                   <button className="btn-primary" onClick={() => setShowMedecinModal(true)}>
                     + Nouveau Médecin
                   </button>
@@ -318,12 +328,15 @@ export default function AdminDashboard() {
               </div>
 
               {/* Médecins */}
-              <div className="admin-card">
+              <div className="card">
                 <h3>👨‍⚕️ Médecins ({staff.medecins.length})</h3>
                 {staff.medecins.length === 0 ? (
-                  <p className="empty-text">Aucun médecin enregistré</p>
+                  <div className="empty-state">
+                    <div className="empty-icon">👨‍⚕️</div>
+                    <p>Aucun médecin enregistré</p>
+                  </div>
                 ) : (
-                  <table className="admin-table">
+                  <table className="table">
                     <thead>
                       <tr>
                         <th>Nom</th>
@@ -342,7 +355,7 @@ export default function AdminDashboard() {
                           <td>{new Date(medecin.createdAt).toLocaleDateString()}</td>
                           <td>
                             <button
-                              className="btn-danger-small"
+                              className="btn-danger"
                               onClick={() => handleDeleteStaff(medecin.userId, medecin.name)}
                             >
                               🗑️ Supprimer
@@ -356,12 +369,15 @@ export default function AdminDashboard() {
               </div>
 
               {/* Réceptionnistes */}
-              <div className="admin-card">
+              <div className="card">
                 <h3>💼 Réceptionnistes ({staff.receptionnistes.length})</h3>
                 {staff.receptionnistes.length === 0 ? (
-                  <p className="empty-text">Aucun réceptionniste enregistré</p>
+                  <div className="empty-state">
+                    <div className="empty-icon">💼</div>
+                    <p>Aucun réceptionniste enregistré</p>
+                  </div>
                 ) : (
-                  <table className="admin-table">
+                  <table className="table">
                     <thead>
                       <tr>
                         <th>Nom</th>
@@ -378,7 +394,7 @@ export default function AdminDashboard() {
                           <td>{new Date(reception.createdAt).toLocaleDateString()}</td>
                           <td>
                             <button
-                              className="btn-danger-small"
+                              className="btn-danger"
                               onClick={() => handleDeleteStaff(reception.userId, reception.name)}
                             >
                               🗑️ Supprimer
@@ -395,12 +411,15 @@ export default function AdminDashboard() {
 
           {/* PATIENTS */}
           {activeTab === "patients" && (
-            <div className="admin-card">
+            <div className="card">
               <h2>🏥 Liste des Patients ({patients.length})</h2>
               {patients.length === 0 ? (
-                <p className="empty-text">Aucun patient enregistré</p>
+                <div className="empty-state">
+                  <div className="empty-icon">🏥</div>
+                  <p>Aucun patient enregistré</p>
+                </div>
               ) : (
-                <table className="admin-table">
+                <table className="table">
                   <thead>
                     <tr>
                       <th>ID</th>
@@ -432,24 +451,32 @@ export default function AdminDashboard() {
 
           {/* FINANCES */}
           {activeTab === "finance" && stats && (
-            <div className="admin-card">
+            <div className="card">
               <h2>💰 Statistiques Financières</h2>
-              <div className="finance-summary">
-                <div className="finance-item">
-                  <h3>Chiffre d'Affaires</h3>
-                  <p className="big-number green">{stats.finance.chiffreAffaires} DT</p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '20px' }}>
+                <div style={{ textAlign: 'center', padding: '20px', background: '#f9fafb', borderRadius: 'var(--radius-md)' }}>
+                  <h3 style={{ fontSize: '1rem', color: 'var(--text-light)', marginBottom: '10px' }}>Chiffre d'Affaires</h3>
+                  <p style={{ fontSize: '2.5rem', fontWeight: '700', color: '#10b981', margin: '0' }}>
+                    {stats.finance.chiffreAffaires} DT
+                  </p>
                 </div>
-                <div className="finance-item">
-                  <h3>Factures Payées</h3>
-                  <p className="big-number">{stats.finance.facturesPayees}</p>
+                <div style={{ textAlign: 'center', padding: '20px', background: '#f9fafb', borderRadius: 'var(--radius-md)' }}>
+                  <h3 style={{ fontSize: '1rem', color: 'var(--text-light)', marginBottom: '10px' }}>Factures Payées</h3>
+                  <p style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--primary)', margin: '0' }}>
+                    {stats.finance.facturesPayees}
+                  </p>
                 </div>
-                <div className="finance-item">
-                  <h3>Factures Impayées</h3>
-                  <p className="big-number red">{stats.finance.facturesImpayees}</p>
+                <div style={{ textAlign: 'center', padding: '20px', background: '#f9fafb', borderRadius: 'var(--radius-md)' }}>
+                  <h3 style={{ fontSize: '1rem', color: 'var(--text-light)', marginBottom: '10px' }}>Factures Impayées</h3>
+                  <p style={{ fontSize: '2.5rem', fontWeight: '700', color: '#ef4444', margin: '0' }}>
+                    {stats.finance.facturesImpayees}
+                  </p>
                 </div>
-                <div className="finance-item">
-                  <h3>Taux de Paiement</h3>
-                  <p className="big-number">{stats.finance.tauxPaiement}%</p>
+                <div style={{ textAlign: 'center', padding: '20px', background: '#f9fafb', borderRadius: 'var(--radius-md)' }}>
+                  <h3 style={{ fontSize: '1rem', color: 'var(--text-light)', marginBottom: '10px' }}>Taux de Paiement</h3>
+                  <p style={{ fontSize: '2.5rem', fontWeight: '700', color: 'var(--primary)', margin: '0' }}>
+                    {stats.finance.tauxPaiement}%
+                  </p>
                 </div>
               </div>
             </div>
@@ -459,15 +486,51 @@ export default function AdminDashboard() {
 
       {/* Modal Nouveau Médecin */}
       {showMedecinModal && (
-        <div className="modal-overlay" onClick={() => setShowMedecinModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setShowMedecinModal(false)}
+        >
+          <div 
+            style={{
+              background: 'white',
+              borderRadius: 'var(--radius-lg)',
+              padding: '30px',
+              maxWidth: '500px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2>👨‍⚕️ Nouveau Médecin</h2>
-              <button className="modal-close" onClick={() => setShowMedecinModal(false)}>×</button>
+              <button 
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '2rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-light)'
+                }}
+                onClick={() => setShowMedecinModal(false)}
+              >
+                ×
+              </button>
             </div>
             <form onSubmit={handleCreateMedecin}>
-              <div className="form-group">
-                <label>Nom complet *</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Nom complet *</label>
                 <input
                   type="text"
                   value={medecinForm.name}
@@ -475,8 +538,8 @@ export default function AdminDashboard() {
                   required
                 />
               </div>
-              <div className="form-group">
-                <label>Email *</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Email *</label>
                 <input
                   type="email"
                   value={medecinForm.email}
@@ -484,8 +547,8 @@ export default function AdminDashboard() {
                   required
                 />
               </div>
-              <div className="form-group">
-                <label>Mot de passe *</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Mot de passe *</label>
                 <input
                   type="password"
                   value={medecinForm.password}
@@ -494,8 +557,8 @@ export default function AdminDashboard() {
                   minLength={6}
                 />
               </div>
-              <div className="form-group">
-                <label>Spécialité *</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Spécialité *</label>
                 <input
                   type="text"
                   value={medecinForm.specialite}
@@ -504,11 +567,15 @@ export default function AdminDashboard() {
                   required
                 />
               </div>
-              <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={() => setShowMedecinModal(false)}>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '30px' }}>
+                <button 
+                  type="button" 
+                  className="btn-secondary"
+                  onClick={() => setShowMedecinModal(false)}
+                >
                   Annuler
                 </button>
-                <button type="submit" className="btn-submit">Créer</button>
+                <button type="submit" className="btn-primary">Créer</button>
               </div>
             </form>
           </div>
@@ -517,15 +584,51 @@ export default function AdminDashboard() {
 
       {/* Modal Nouveau Réceptionniste */}
       {showReceptionModal && (
-        <div className="modal-overlay" onClick={() => setShowReceptionModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
+        <div 
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            zIndex: 1000
+          }}
+          onClick={() => setShowReceptionModal(false)}
+        >
+          <div 
+            style={{
+              background: 'white',
+              borderRadius: 'var(--radius-lg)',
+              padding: '30px',
+              maxWidth: '500px',
+              width: '90%',
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <h2>💼 Nouveau Réceptionniste</h2>
-              <button className="modal-close" onClick={() => setShowReceptionModal(false)}>×</button>
+              <button 
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '2rem',
+                  cursor: 'pointer',
+                  color: 'var(--text-light)'
+                }}
+                onClick={() => setShowReceptionModal(false)}
+              >
+                ×
+              </button>
             </div>
             <form onSubmit={handleCreateReceptionniste}>
-              <div className="form-group">
-                <label>Nom complet *</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Nom complet *</label>
                 <input
                   type="text"
                   value={receptionForm.name}
@@ -533,8 +636,8 @@ export default function AdminDashboard() {
                   required
                 />
               </div>
-              <div className="form-group">
-                <label>Email *</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Email *</label>
                 <input
                   type="email"
                   value={receptionForm.email}
@@ -542,8 +645,8 @@ export default function AdminDashboard() {
                   required
                 />
               </div>
-              <div className="form-group">
-                <label>Mot de passe *</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Mot de passe *</label>
                 <input
                   type="password"
                   value={receptionForm.password}
@@ -552,11 +655,15 @@ export default function AdminDashboard() {
                   minLength={6}
                 />
               </div>
-              <div className="modal-actions">
-                <button type="button" className="btn-cancel" onClick={() => setShowReceptionModal(false)}>
+              <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', marginTop: '30px' }}>
+                <button 
+                  type="button" 
+                  className="btn-secondary"
+                  onClick={() => setShowReceptionModal(false)}
+                >
                   Annuler
                 </button>
-                <button type="submit" className="btn-submit">Créer</button>
+                <button type="submit" className="btn-primary">Créer</button>
               </div>
             </form>
           </div>

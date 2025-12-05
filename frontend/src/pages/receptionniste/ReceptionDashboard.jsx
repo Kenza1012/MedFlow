@@ -1,8 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { receptionnisteService } from "../../services/receptionniste";
-import "./ReceptionDashboard.css";
-
+import "../../styles/global.css";
 export default function ReceptionDashboard() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -10,17 +9,11 @@ export default function ReceptionDashboard() {
   const [showFactureModal, setShowFactureModal] = useState(false);
   const [showPatientModal, setShowPatientModal] = useState(false);
   
-  // États pour les filtres
   const [filters, setFilters] = useState({
-    // Filtres rendez-vous
-    rdvDateFilter: "today", // today, week, month, all
+    rdvDateFilter: "today",
     rdvPatientFilter: "",
     rdvMedecinFilter: "",
-    
-    // Filtres factures
-    factureStatutFilter: "all", // all, paid, unpaid
-    
-    // Filtres patients
+    factureStatutFilter: "all",
     patientNameFilter: ""
   });
 
@@ -46,13 +39,11 @@ export default function ReceptionDashboard() {
     antecedents: ""
   });
 
-  // Informations du réceptionniste
   const receptionnisteInfo = {
     name: localStorage.getItem("user_name") || "Réceptionniste",
     email: localStorage.getItem("user_email") || "reception@clinique.com"
   };
 
-  // Charger toutes les données
   const loadData = async () => {
     setLoading(true);
     try {
@@ -88,14 +79,11 @@ export default function ReceptionDashboard() {
     loadData();
   }, []);
 
-  // 🔹 FONCTIONS DE FILTRAGE
-
-  // 1. Filtrer les rendez-vous par période (jour/semaine/mois)
+  // Fonctions de filtrage
   const getFilteredRendezVous = () => {
     let filtered = [...data.rendezVous];
-
-    // Filtre par période
     const now = new Date();
+    
     switch (filters.rdvDateFilter) {
       case "today":
         filtered = filtered.filter(rdv => 
@@ -129,11 +117,9 @@ export default function ReceptionDashboard() {
       }
       case "all":
       default:
-        // Pas de filtre de date
         break;
     }
 
-    // Filtre par nom de patient
     if (filters.rdvPatientFilter) {
       filtered = filtered.filter(rdv => 
         rdv.patient?.user?.name?.toLowerCase().includes(filters.rdvPatientFilter.toLowerCase()) ||
@@ -141,7 +127,6 @@ export default function ReceptionDashboard() {
       );
     }
 
-    // Filtre par nom de médecin
     if (filters.rdvMedecinFilter) {
       filtered = filtered.filter(rdv => 
         rdv.medecin?.user?.name?.toLowerCase().includes(filters.rdvMedecinFilter.toLowerCase()) ||
@@ -152,7 +137,6 @@ export default function ReceptionDashboard() {
     return filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
   };
 
-  // 2. Filtrer les factures par statut
   const getFilteredFactures = () => {
     let filtered = [...data.factures];
 
@@ -165,14 +149,12 @@ export default function ReceptionDashboard() {
         break;
       case "all":
       default:
-        // Toutes les factures
         break;
     }
 
     return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
   };
 
-  // 3. Filtrer les patients par nom
   const getFilteredPatients = () => {
     let filtered = [...data.patients];
 
@@ -186,7 +168,6 @@ export default function ReceptionDashboard() {
     return filtered.sort((a, b) => a.user?.name?.localeCompare(b.user?.name));
   };
 
-  // 4. Rendez-vous du jour pour le tableau de bord
   const getRendezVousAujourdhui = () => {
     const today = new Date().toDateString();
     return data.rendezVous.filter(rdv => 
@@ -194,20 +175,17 @@ export default function ReceptionDashboard() {
     ).sort((a, b) => new Date(a.date) - new Date(b.date));
   };
 
-  // Données filtrées
   const filteredRendezVous = getFilteredRendezVous();
   const filteredFactures = getFilteredFactures();
   const filteredPatients = getFilteredPatients();
   const rendezVousAujourdhui = getRendezVousAujourdhui();
 
-  // Gestion des filtres
   const handleFilterChange = (filterName, value) => {
     setFilters(prev => ({
       ...prev,
       [filterName]: value
     }));
   };
-
 
   const handleLogout = () => {
     localStorage.removeItem("access_token");
@@ -265,7 +243,6 @@ export default function ReceptionDashboard() {
     }
   };
 
-  // Création d'un nouveau patient
   const handleCreatePatient = async (e) => {
     e.preventDefault();
     
@@ -312,7 +289,6 @@ export default function ReceptionDashboard() {
     }
   };
 
-  // Statistiques dynamiques
   const stats = {
     totalRendezVous: data.rendezVous.length,
     rdvAujourdhui: rendezVousAujourdhui.length,
@@ -324,7 +300,7 @@ export default function ReceptionDashboard() {
 
   if (loading) {
     return (
-      <div className="loading-spinner">
+      <div className="loading">
         <div className="spinner"></div>
         <p>Chargement des données...</p>
       </div>
@@ -332,9 +308,9 @@ export default function ReceptionDashboard() {
   }
 
   return (
-    <div className="reception-dashboard">
+    <div className="dashboard-container">
       {/* Sidebar */}
-      <aside className="reception-sidebar">
+      <aside className="sidebar gradient-receptionist">
         <h2>💼 Réception</h2>
         <button 
           className={activeTab === "dashboard" ? "active" : ""}
@@ -360,21 +336,22 @@ export default function ReceptionDashboard() {
         >
           👥 Patients
         </button>
-        <button onClick={handleLogout} className="reception-logout-btn">
+        <button onClick={handleLogout} className="logout-btn">
           🚪 Déconnexion
         </button>
       </aside>
 
       {/* Main Content */}
-      <main className="reception-main">
+      <main className="dashboard-main">
         {/* Header */}
-        <header className="reception-header">
-          <div className="reception-header-left">
+        <header className="dashboard-header">
+          <div>
             <h1>Portail Réceptionniste MedFlow</h1>
-            <div className="reception-welcome">Bienvenue, {receptionnisteInfo.name}</div>
+            <div style={{ fontSize: '0.95rem', color: 'var(--text-light)', marginTop: '5px' }}>
+              Bienvenue, {receptionnisteInfo.name}
+            </div>
           </div>
-          <div className="reception-header-actions">
-            <button className="reception-notif-btn">🔔</button>
+          <div className="header-actions">
             <span className="reception-name">{receptionnisteInfo.name}</span>
             <img
               src="https://cdn-icons-png.flaticon.com/512/1077/1077063.png"
@@ -385,33 +362,33 @@ export default function ReceptionDashboard() {
         </header>
 
         {/* Content */}
-        <div className="reception-content">
+        <div className="dashboard-content">
           {/* Tableau de bord */}
           {activeTab === "dashboard" && (
             <>
-              <div className="reception-stats-grid">
-                <div className="reception-stat-card">
-                  <div className="reception-stat-number">{stats.totalRendezVous}</div>
-                  <div className="reception-stat-label">Rendez-vous total</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px', marginBottom: '30px' }}>
+                <div className="stat-card">
+                  <div className="stat-number">{stats.totalRendezVous}</div>
+                  <div className="stat-label">Rendez-vous total</div>
                 </div>
-                <div className="reception-stat-card">
-                  <div className="reception-stat-number">{stats.rdvAujourdhui}</div>
-                  <div className="reception-stat-label">RDV aujourd'hui</div>
+                <div className="stat-card">
+                  <div className="stat-number">{stats.rdvAujourdhui}</div>
+                  <div className="stat-label">RDV aujourd'hui</div>
                 </div>
-                <div className="reception-stat-card">
-                  <div className="reception-stat-number">{stats.facturesImpayees}</div>
-                  <div className="reception-stat-label">Factures impayées</div>
+                <div className="stat-card">
+                  <div className="stat-number">{stats.facturesImpayees}</div>
+                  <div className="stat-label">Factures impayées</div>
                 </div>
-                <div className="reception-stat-card">
-                  <div className="reception-stat-number">{stats.chiffreAffaires}€</div>
-                  <div className="reception-stat-label">Chiffre d'affaires</div>
+                <div className="stat-card">
+                  <div className="stat-number">{stats.chiffreAffaires}€</div>
+                  <div className="stat-label">Chiffre d'affaires</div>
                 </div>
               </div>
 
-              <div className="reception-card">
-                <div className="card-header-with-filters">
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                   <h2>📅 Rendez-vous du jour</h2>
-                  <div className="header-actions">
+                  <div style={{ display: 'flex', gap: '10px' }}>
                     <button 
                       className="btn-primary"
                       onClick={() => navigate("/reception/rendezvous/new")}
@@ -422,11 +399,11 @@ export default function ReceptionDashboard() {
                 </div>
                 {rendezVousAujourdhui.length === 0 ? (
                   <div className="empty-state">
-                    <div className="empty-state-icon">📅</div>
+                    <div className="empty-icon">📅</div>
                     <p>Aucun rendez-vous aujourd'hui</p>
                   </div>
                 ) : (
-                  <table className="reception-table">
+                  <table className="table">
                     <thead>
                       <tr>
                         <th>Heure</th>
@@ -445,7 +422,7 @@ export default function ReceptionDashboard() {
                           <td>Dr. {rdv.medecin?.user?.name || "Inconnu"}</td>
                           <td>{rdv.motif}</td>
                           <td>
-                            <span className={`status-badge status-${rdv.status?.toLowerCase().replace('é', 'e') || 'programme'}`}>
+                            <span className={`badge ${rdv.status?.toLowerCase() === 'confirmé' ? 'green' : rdv.status?.toLowerCase() === 'annulé' ? 'red' : ''}`}>
                               {rdv.status}
                             </span>
                           </td>
@@ -465,8 +442,8 @@ export default function ReceptionDashboard() {
                 )}
               </div>
 
-              <div className="reception-card">
-                <div className="card-header-with-filters">
+              <div className="card">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
                   <h2>💰 Factures en attente</h2>
                   <button 
                     className="btn-primary"
@@ -477,11 +454,11 @@ export default function ReceptionDashboard() {
                 </div>
                 {data.factures.filter(f => f.statut === "Non payé").length === 0 ? (
                   <div className="empty-state">
-                    <div className="empty-state-icon">✅</div>
+                    <div className="empty-icon">✅</div>
                     <p>Toutes les factures sont payées</p>
                   </div>
                 ) : (
-                  <table className="reception-table">
+                  <table className="table">
                     <thead>
                       <tr>
                         <th>Date</th>
@@ -500,7 +477,7 @@ export default function ReceptionDashboard() {
                             <td>{facture.patient?.user?.name || "Inconnu"}</td>
                             <td>{facture.montant} €</td>
                             <td>
-                              <span className={`status-badge status-${facture.statut?.toLowerCase().replace(' ', '-') || 'non-paye'}`}>
+                              <span className="badge red">
                                 {facture.statut}
                               </span>
                             </td>
@@ -830,7 +807,7 @@ export default function ReceptionDashboard() {
                   });
                 }}
               >
-                ×
+                
               </button>
             </div>
             <form onSubmit={handleCreatePatient} className="reception-form">

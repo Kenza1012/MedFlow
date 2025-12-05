@@ -1,4 +1,5 @@
-// src/pages/patient/patientDashboard.jsx
+
+import "../../styles/global.css";
 import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -10,7 +11,6 @@ import {
   annulerRendezVous,
   modifierRendezVous,
 } from "../../services/patient";
-import "./patient.css";
 
 export default function PatientDashboard() {
   const [patientInfo, setPatientInfo] = useState(null);
@@ -28,7 +28,6 @@ export default function PatientDashboard() {
 
   const navigate = useNavigate();
 
-  /** 🔹 Utilisateur connecté et token */
   const { user, userId, token } = useMemo(() => {
     const stored = localStorage.getItem("user");
     const parsed = stored ? JSON.parse(stored) : null;
@@ -38,13 +37,11 @@ export default function PatientDashboard() {
     return { user: parsed, userId: id, token: authToken };
   }, []);
 
-  /** 🔹 Déconnexion */
   const handleLogout = () => {
     localStorage.clear();
     navigate("/");
   };
 
-  /** 🔹 Charger les données */
   useEffect(() => {
     if (!userId) {
       console.warn("⚠️ userId manquant");
@@ -57,17 +54,14 @@ export default function PatientDashboard() {
       try {
         console.log("📍 Chargement données pour userId:", userId);
 
-        // 1️⃣ Récupérer les infos du patient par userId
         const info = await fetchPatientInfo(userId);
         console.log("✅ Info patient:", info);
         setPatientInfo(info);
 
-        // 2️⃣ Récupérer les médecins disponibles
         const medecinsData = await fetchMedecinsDisponibles();
         console.log("✅ Médecins reçus:", medecinsData);
         setMedecins(medecinsData || []);
 
-        // 3️⃣ Utiliser l'ID du patient pour les RDV et factures
         if (info?.id) {
           const [rdv, fact] = await Promise.all([
             fetchRendezVous(info.id),
@@ -90,7 +84,6 @@ export default function PatientDashboard() {
     loadData();
   }, [userId, refreshKey]);
 
-  /** 🔹 Réserver un rendez-vous */
   const handleReserver = async (e) => {
     e.preventDefault();
 
@@ -121,7 +114,6 @@ export default function PatientDashboard() {
     }
   };
 
-  /** ❌ Annuler rendez-vous */
   const handleCancelRendezVous = async (id) => {
     if (!window.confirm("Voulez-vous vraiment annuler ce rendez-vous ?"))
       return;
@@ -136,7 +128,6 @@ export default function PatientDashboard() {
     }
   };
 
-  /** ✏️ Modifier rendez-vous */
   const handleEditRendezVous = async (id) => {
     if (!editData.date || !editData.motif) {
       alert("❌ Veuillez remplir les champs de modification.");
@@ -157,7 +148,6 @@ export default function PatientDashboard() {
     }
   };
 
-  /** 💳 Gérer le paiement Stripe */
   const handlePayNow = async (factureId) => {
     if (!token) {
       alert("❌ Vous n'êtes pas authentifié");
@@ -183,7 +173,6 @@ export default function PatientDashboard() {
       const { sessionId, url } = await res.json();
       console.log("✅ Session créée:", sessionId);
       
-      // 🔗 Redirection directe vers l'URL Stripe (nouvelle API)
       if (url) {
         window.location.href = url;
       } else {
@@ -195,12 +184,19 @@ export default function PatientDashboard() {
     }
   };
 
-
+  if (loading) {
+    return (
+      <div className="loading">
+        <div className="spinner"></div>
+        <p>Chargement...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard-container">
-      {/* === SIDEBAR === */}
-      <aside className="sidebar">
+      {/* Sidebar */}
+      <aside className="sidebar gradient-patient">
         <h2>🧍‍♂️ Patient</h2>
         <button
           onClick={() => setActiveTab("informations")}
@@ -225,7 +221,7 @@ export default function PatientDashboard() {
         </button>
       </aside>
 
-      {/* === MAIN === */}
+      {/* Main */}
       <main className="dashboard-main">
         <header className="dashboard-header">
           <h1>📋 Tableau de bord Patient</h1>
@@ -240,13 +236,13 @@ export default function PatientDashboard() {
         </header>
 
         <div className="dashboard-content">
-          {/* === INFORMATIONS === */}
+          {/* INFORMATIONS */}
           {activeTab === "informations" && patientInfo && (
             <section className="card">
               <h2>👤 Mes Informations Personnelles</h2>
 
-              <div className="form-group row">
-                <label>Nom complet</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '15px', alignItems: 'center', marginBottom: '20px' }}>
+                <label style={{ fontWeight: 600 }}>Nom complet</label>
                 <input
                   type="text"
                   value={patientInfo.user?.name || ""}
@@ -254,8 +250,8 @@ export default function PatientDashboard() {
                 />
               </div>
 
-              <div className="form-group row">
-                <label>Email</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '15px', alignItems: 'center', marginBottom: '20px' }}>
+                <label style={{ fontWeight: 600 }}>Email</label>
                 <input
                   type="email"
                   value={patientInfo.user?.email || ""}
@@ -263,8 +259,8 @@ export default function PatientDashboard() {
                 />
               </div>
 
-              <div className="form-group row">
-                <label>Date de naissance</label>
+              <div style={{ display: 'grid', gridTemplateColumns: '200px 1fr', gap: '15px', alignItems: 'center', marginBottom: '20px' }}>
+                <label style={{ fontWeight: 600 }}>Date de naissance</label>
                 <input
                   type="date"
                   value={new Date(patientInfo.dateNaissance).toISOString().split("T")[0]}
@@ -272,8 +268,8 @@ export default function PatientDashboard() {
                 />
               </div>
 
-              <div className="form-group full-width">
-                <label>Antécédents médicaux</label>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Antécédents médicaux</label>
                 <textarea
                   value={patientInfo.antecedents || "Aucun"}
                   disabled
@@ -283,17 +279,26 @@ export default function PatientDashboard() {
             </section>
           )}
 
-          {/* === RENDEZ-VOUS === */}
+          {/* RENDEZ-VOUS */}
           {activeTab === "rendezvous" && (
             <section className="card">
               <h2>📅 Mes Rendez-vous</h2>
 
               {/* Formulaire de réservation */}
-              <form onSubmit={handleReserver} className="reservation-form">
-                <label>Médecin :</label>
+              <form 
+                onSubmit={handleReserver} 
+                style={{
+                  background: '#f9fafb',
+                  padding: '24px',
+                  borderRadius: 'var(--radius-lg)',
+                  marginBottom: '30px'
+                }}
+              >
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Médecin :</label>
                 <select
                   value={selectedMedecin}
                   onChange={(e) => setSelectedMedecin(e.target.value)}
+                  style={{ marginBottom: '16px' }}
                 >
                   <option value="">-- Sélectionnez un médecin --</option>
                   {medecins.map((m) => (
@@ -303,25 +308,31 @@ export default function PatientDashboard() {
                   ))}
                 </select>
 
-                <label>Date :</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Date :</label>
                 <input
                   type="datetime-local"
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
+                  style={{ marginBottom: '16px' }}
                 />
 
-                <label>Motif :</label>
+                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Motif :</label>
                 <textarea
                   placeholder="Ex: consultation, douleur..."
                   value={motif}
                   onChange={(e) => setMotif(e.target.value)}
+                  style={{ marginBottom: '16px' }}
                 />
 
-                <button type="submit">✅ Réserver</button>
+                <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '10px' }}>
+                  ✅ Réserver
+                </button>
               </form>
 
               {/* Liste des RDV */}
-              <h3 className="section-title">Mes rendez-vous ({rendezVous.length})</h3>
+              <h3 style={{ fontSize: '1.3rem', fontWeight: 600, margin: '30px 0 20px' }}>
+                Mes rendez-vous ({rendezVous.length})
+              </h3>
               {rendezVous.length > 0 ? (
                 <table className="table">
                   <thead>
@@ -343,15 +354,11 @@ export default function PatientDashboard() {
                           <td>Dr. {rdv.medecin?.user?.name || "Inconnu"}</td>
                           <td>{rdv.medecin?.specialite || "?"}</td>
                           <td>
-                            <span
-                              className={`rdv-status ${rdv.status
-                                ?.toLowerCase()
-                                .replace(" ", "-")}`}
-                            >
+                            <span className={`badge ${rdv.status?.toLowerCase() === 'confirmé' ? 'green' : rdv.status?.toLowerCase() === 'annulé' ? 'red' : ''}`}>
                               {rdv.status}
                             </span>
                           </td>
-                          <td className="actions-cell">
+                          <td style={{ display: 'flex', gap: '8px' }}>
                             <button
                               className="btn-secondary"
                               disabled={rdv.status === "Annulé"}
@@ -377,44 +384,50 @@ export default function PatientDashboard() {
 
                         {/* Ligne de modification inline */}
                         {editRdvId === rdv.id && (
-                          <tr className="edit-row">
+                          <tr style={{ background: '#f9fafb' }}>
                             <td colSpan="6">
                               <form
                                 onSubmit={(e) => {
                                   e.preventDefault();
                                   handleEditRendezVous(rdv.id);
                                 }}
-                                className="edit-form"
+                                style={{
+                                  padding: '20px',
+                                  display: 'grid',
+                                  gridTemplateColumns: '1fr 1fr',
+                                  gap: '15px'
+                                }}
                               >
-                                <label>Nouvelle date :</label>
-                                <input
-                                  type="datetime-local"
-                                  value={editData.date}
-                                  onChange={(e) =>
-                                    setEditData({
-                                      ...editData,
-                                      date: e.target.value,
-                                    })
-                                  }
-                                />
+                                <div>
+                                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Nouvelle date :</label>
+                                  <input
+                                    type="datetime-local"
+                                    value={editData.date}
+                                    onChange={(e) =>
+                                      setEditData({
+                                        ...editData,
+                                        date: e.target.value,
+                                      })
+                                    }
+                                  />
+                                </div>
 
-                                <label>Nouveau motif :</label>
-                                <input
-                                  type="text"
-                                  value={editData.motif}
-                                  onChange={(e) =>
-                                    setEditData({
-                                      ...editData,
-                                      motif: e.target.value,
-                                    })
-                                  }
-                                />
+                                <div>
+                                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600 }}>Nouveau motif :</label>
+                                  <input
+                                    type="text"
+                                    value={editData.motif}
+                                    onChange={(e) =>
+                                      setEditData({
+                                        ...editData,
+                                        motif: e.target.value,
+                                      })
+                                    }
+                                  />
+                                </div>
 
-                                <div className="edit-actions">
-                                  <button
-                                    type="submit"
-                                    className="btn-primary"
-                                  >
+                                <div style={{ gridColumn: '1 / -1', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                                  <button type="submit" className="btn-primary">
                                     💾 Enregistrer
                                   </button>
                                   <button
@@ -434,12 +447,15 @@ export default function PatientDashboard() {
                   </tbody>
                 </table>
               ) : (
-                <p className="empty-message">Aucun rendez-vous programmé</p>
+                <div className="empty-state">
+                  <div className="empty-icon">📅</div>
+                  <p>Aucun rendez-vous programmé</p>
+                </div>
               )}
             </section>
           )}
 
-          {/* === FACTURES === */}
+          {/* FACTURES */}
           {activeTab === "factures" && (
             <section className="card">
               <h2>💳 Mes Factures ({factures.length})</h2>
@@ -464,15 +480,11 @@ export default function PatientDashboard() {
                         <td>
                           {facture.consultation?.diagnostic || "Consultation"}
                         </td>
-                        <td className="amount">
+                        <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
                           {facture.montant} €
                         </td>
                         <td>
-                          <span
-                            className={`statut ${facture.statut
-                              ?.toLowerCase()
-                              .replace(" ", "-")}`}
-                          >
+                          <span className={`badge ${facture.statut?.toLowerCase() === 'payée' ? 'green' : 'red'}`}>
                             {facture.statut}
                           </span>
                         </td>
@@ -483,11 +495,11 @@ export default function PatientDashboard() {
                               className="btn-primary"
                               onClick={() => handlePayNow(facture.id)}
                             >
-                               Payer maintenant
+                              💳 Payer maintenant
                             </button>
                           )}
                           {facture.statut === "Payée" && (
-                            <span className="paid-badge">✅ Payée</span>
+                            <span style={{ color: '#10b981', fontWeight: 600 }}>✅ Payée</span>
                           )}
                         </td>
                       </tr>
@@ -495,7 +507,10 @@ export default function PatientDashboard() {
                   </tbody>
                 </table>
               ) : (
-                <p className="empty-message">Aucune facture</p>
+                <div className="empty-state">
+                  <div className="empty-icon">💳</div>
+                  <p>Aucune facture</p>
+                </div>
               )}
             </section>
           )}
