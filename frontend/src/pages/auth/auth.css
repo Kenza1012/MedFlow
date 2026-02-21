@@ -1,0 +1,118 @@
+/* 🌆 Conteneur principal */
+.auth-container {
+  position: relative;
+  height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: background-image 0.5s ease-in-out;
+}
+
+/* ✅ Image de fond pour la page Login */
+.auth-container.login {
+  background-image: url("/src/assets/bg9.jpg");
+}
+
+/* ✅ Image de fond pour la page Register */
+.auth-container.register {
+  background-image: url("/src/assets/bg7.jpg");
+}
+
+/* 🌫️ Effet de superposition */
+.auth-container::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(10, 25, 47, 0.6); /* fond sombre semi-transparent */
+  z-index: 1;
+}
+
+/* 🧩 Carte de formulaire */
+.auth-card {
+  position: relative;
+  z-index: 2;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  padding: 40px;
+  border-radius: 20px;
+  width: 380px;
+  text-align: center;
+  color: white;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+  animation: fadeIn 1s ease;
+}
+
+.auth-card h2 {
+  margin-bottom: 20px;
+  font-size: 1.8rem;
+  font-weight: 600;
+}
+
+/* ✏️ Champs du formulaire */
+.auth-card input,
+.auth-card textarea {
+  width: 100%;
+  padding: 12px;
+  margin-bottom: 15px;
+  border-radius: 8px;
+  border: none;
+  outline: none;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 1rem;
+  color: #333;
+}
+
+/* 🚀 Bouton principal */
+.auth-card button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  background-color: #00bfa6;
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.auth-card button:hover {
+  background-color: #00997e;
+  transform: scale(1.05);
+}
+
+/* 🔗 Lien vers Register / Login */
+.auth-card a {
+  color: #00bfa6;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.auth-card a:hover {
+  text-decoration: underline;
+}
+
+/* ⚠️ Message d’erreur / succès */
+.message {
+  margin-top: 10px;
+  font-size: 0.95rem;
+}
+
+/* ✨ Animation d’apparition */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(15px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

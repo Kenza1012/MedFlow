@@ -1,0 +1,24 @@
+.app-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 25px;
+  background: #1e293b;
+  color: #cbd5e1;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+  gap: 10px;
+  box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+}
+
+.footer-links a {
+  margin-left: 12px;
+  color: #60a5fa;
+  text-decoration: none;
+  font-weight: 500;
+  transition: 0.2s;
+}
+
+.footer-links a:hover {
+  color: white;
+}
